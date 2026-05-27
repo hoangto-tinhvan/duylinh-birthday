@@ -460,7 +460,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
 import { getFirestore, collection, addDoc, serverTimestamp }
   from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL }
+import { getStorage, ref, uploadBytes, getDownloadURL, getMetadata }
   from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js';
 
 // ═══════════════════════════════════════════════════════════════
@@ -479,6 +479,62 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const st  = getStorage(app);
+
+// ── Boot diagnostic (chạy ngay khi tải trang) ──
+async function bootDiag() {
+  const lines = [];
+  const add = (icon, msg) => { lines.push(`${icon} ${msg}`); console.log(`[Diag] ${icon} ${msg}`); };
+
+  add('📦', `Project: ${firebaseConfig.projectId}`);
+  add('🪣', `Bucket:  ${firebaseConfig.storageBucket}`);
+
+  // Kiểm tra Storage bucket có tồn tại không
+  try {
+    const pingRef = ref(st, '__diag_ping__');
+    await getMetadata(pingRef);
+    add('✅', 'Storage: bucket tồn tại, kết nối OK');
+  } catch (e) {
+    if (e.code === 'storage/object-not-found') {
+      add('✅', 'Storage: bucket tồn tại, sẵn sàng upload');
+    } else if (e.code === 'storage/unauthorized') {
+      add('⚠️', 'Storage: bucket tồn tại nhưng rules chặn — kiểm tra Security Rules');
+    } else {
+      add('❌', `Storage: ${e.code || e.message}`);
+      add('👉', 'Vào Firebase Console → Storage → kiểm tra bucket đã tạo chưa');
+    }
+  }
+
+  // Kiểm tra Firestore
+  try {
+    const { getDocs, query, limit: lim } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    await getDocs(query(collection(db, 'photos'), lim(1)));
+    add('✅', 'Firestore: kết nối OK');
+  } catch (e) {
+    add('❌', `Firestore: ${e.code || e.message}`);
+  }
+
+  // Hiển thị overlay
+  showDiagOverlay(lines);
+}
+
+function showDiagOverlay(lines) {
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed; bottom:70px; left:50%; transform:translateX(-50%);
+    background:rgba(5,5,20,0.97); border:1px solid rgba(201,167,74,0.4);
+    border-radius:14px; padding:14px 18px; z-index:999; max-width:90vw;
+    font-family:monospace; font-size:12px; color:#e8d5a3; line-height:1.7;
+    box-shadow:0 8px 32px rgba(0,0,0,0.7);
+  `;
+  el.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;color:#c9a74a">🔍 Firebase Diagnostic</div>` +
+    lines.map(l => `<div>${l}</div>`).join('') +
+    `<div style="margin-top:8px;font-size:11px;color:rgba(240,230,200,0.4)">Bấm để đóng</div>`;
+  el.addEventListener('click', () => el.remove());
+  document.body.appendChild(el);
+  setTimeout(() => el?.remove(), 15000);
+}
+
+bootDiag();
 
 // ── state ──
 let userName    = '';
@@ -565,9 +621,19 @@ $('shareBtn').addEventListener('click', async () => {
     toast(false);
     show('s-success');
   } catch (err) {
-    console.error('[Share] LỖI:', err);
+    console.error('[Share] LỖI:', err.code, err.message, err);
     toast(false);
-    alert(`Lỗi: ${err.message}\n\nKiểm tra:\n• Mạng điện thoại\n• Firebase Storage đã bật chưa\n• Mở DevTools → Console để xem chi tiết`);
+
+    let hint = '';
+    if (!err.code || err.code === 'storage/unknown' || err.message?.includes('404') || err.message?.includes('CORS') || err.message?.includes('fetch')) {
+      hint = '\n\n👉 Bucket chưa tồn tại hoặc Storage chưa được bật.\nVào Firebase Console → Build → Storage → tạo bucket.';
+    } else if (err.code === 'storage/unauthorized') {
+      hint = '\n\n👉 Security Rules đang chặn. Vào Firebase Console → Storage → Rules → đổi sang test mode.';
+    } else if (err.message?.includes('Timeout') || err.message?.includes('timeout')) {
+      hint = '\n\n👉 Mạng chậm hoặc Firebase Storage không phản hồi.';
+    }
+
+    alert(`❌ ${err.code || 'Lỗi'}: ${err.message}${hint}`);
   }
   $('shareBtn').disabled = false;
 });
