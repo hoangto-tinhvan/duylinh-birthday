@@ -3,390 +3,387 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎂 Sinh nhật sư phụ Duy Linh 3⁴</title>
+  <title>Admin — Quản lý ảnh</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html, body { height: 100%; overflow: hidden; }
+    :root {
+      --bg:      #0f0f18;
+      --surface: #1a1a2e;
+      --border:  rgba(255,255,255,0.08);
+      --text:    #e8e8f0;
+      --muted:   rgba(232,232,240,0.45);
+      --red:     #ef4444;
+      --red-dim: rgba(239,68,68,0.15);
+      --gold:    #f59e0b;
+      --gold-dim:rgba(245,158,11,0.15);
+      --check:   #818cf8;
+      --radius:  12px;
+    }
+
+    html, body { height: 100%; }
 
     body {
+      background: var(--bg);
+      color: var(--text);
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(-45deg, #c2185b, #7b1fa2, #e53935, #ad1457, #6a1b9a);
-      background-size: 400% 400%;
-      animation: bgFlow 14s ease infinite;
-    }
-    @keyframes bgFlow {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* ── Floating hearts ── */
-    .fheart {
-      position: fixed;
-      pointer-events: none;
-      z-index: 0;
-      animation: floatUp linear infinite;
-      opacity: 0;
-    }
-    @keyframes floatUp {
-      0%   { transform: translateY(110vh) rotate(0deg) scale(1);   opacity: 0; }
-      10%  { opacity: 0.7; }
-      90%  { opacity: 0.5; }
-      100% { transform: translateY(-12vh) rotate(720deg) scale(0.5); opacity: 0; }
-    }
-
-    /* ── Layout ── */
-    #app {
-      position: relative;
-      z-index: 1;
-      height: 100vh;
-      display: flex;
-    }
-
-    /* ══ LEFT PANEL ══ */
-    #panel {
-      flex-shrink: 0;
-      width: 250px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 24px 16px 20px;
-      gap: 0;
-      background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(24px);
-      border-right: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 4px 0 40px rgba(0,0,0,0.25);
-      overflow: hidden;
     }
 
-    .panel-cake { font-size: 44px; margin-bottom: 6px; animation: bounce 2s ease-in-out infinite; }
-    @keyframes bounce { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
-
-    .panel-title {
-      font-family: 'Dancing Script', cursive;
-      font-size: 1.35rem;
-      color: #fff;
-      text-align: center;
-      line-height: 1.4;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      margin-bottom: 4px;
-    }
-    .panel-title .name {
-      font-size: 1.6rem;
-      color: #ffd700;
-      display: block;
-      text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
-    }
-    .panel-title sup { font-size: 0.75em; }
-
-    .panel-divider {
-      width: 100%;
+    /* ── Header ── */
+    header {
+      flex-shrink: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin: 12px 0;
-    }
-    .panel-divider::before, .panel-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,215,0,0.5);
-    }
-    .panel-divider span { color: #ffd700; font-size: 14px; }
-
-    /* QR */
-    #qrWrap {
-      background: rgba(255,255,255,0.9);
-      border-radius: 14px;
-      padding: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,215,0,0.5);
-      margin-bottom: 8px;
-    }
-    #qrCanvas { display: block; border-radius: 6px; }
-    .qr-label {
-      text-align: center;
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 4px;
-      letter-spacing: 0.3px;
-    }
-    .qr-url {
-      text-align: center;
-      font-size: 0.7rem;
-      color: #ffd700;
-      font-weight: 500;
-      margin-bottom: 12px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    /* Live + count */
-    .live-row {
+    .header-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+    }
+
+    #totalCount {
+      background: var(--gold-dim);
+      color: var(--gold);
       font-size: 0.75rem;
-      color: rgba(255,255,255,0.85);
-      margin-bottom: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(245,158,11,0.3);
     }
-    .live-dot {
-      width: 7px; height: 7px;
-      background: #4ade80;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #4ade80;
-      animation: blink 1.6s ease-in-out infinite;
-    }
-    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 
-    /* Thumbnails grid */
-    #thumbs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      width: 100%;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      flex-wrap: wrap;
     }
-    .thumb {
-      aspect-ratio: 1;
+
+    /* Buttons */
+    .btn {
+      padding: 8px 16px;
       border-radius: 8px;
-      overflow: hidden;
-      border: 1.5px solid rgba(255,215,0,0.4);
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.83rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-      position: relative;
-      animation: thumbPop 0.35s ease;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
     }
-    @keyframes thumbPop { from { transform: scale(0.7); opacity:0; } to { transform: scale(1); opacity:1; } }
-    .thumb:hover { transform: scale(1.06); border-color: #ffd700; }
-    .thumb.active-thumb { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.6); }
-    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-    .thumb-name {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.65));
-      font-size: 0.58rem;
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-ghost:not(:disabled):hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+    .btn-danger {
+      background: var(--red-dim);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: var(--red);
+    }
+    .btn-danger:not(:disabled):hover { background: rgba(239,68,68,0.25); }
+
+    .btn-danger-solid {
+      background: var(--red);
       color: #fff;
-      padding: 8px 4px 3px;
-      text-align: center;
+    }
+    .btn-danger-solid:not(:disabled):hover { background: #dc2626; }
+
+    .selected-info {
+      font-size: 0.8rem;
+      color: var(--check);
+      font-weight: 500;
+      padding: 0 4px;
+    }
+
+    /* ── Grid ── */
+    #grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+      align-content: start;
+    }
+
+    /* Photo card */
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      position: relative;
+      user-select: none;
+    }
+    .card:hover { border-color: rgba(255,255,255,0.18); transform: translateY(-2px); }
+    .card.selected { border-color: var(--check); box-shadow: 0 0 0 2px rgba(129,140,248,0.35); }
+
+    /* Checkbox */
+    .card-check {
+      position: absolute;
+      top: 8px; left: 8px;
+      width: 22px; height: 22px;
+      border-radius: 6px;
+      border: 2px solid rgba(255,255,255,0.5);
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .card.selected .card-check {
+      background: var(--check);
+      border-color: var(--check);
+    }
+    .card-check svg { display: none; }
+    .card.selected .card-check svg { display: block; }
+
+    /* Delete single button */
+    .card-del {
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: rgba(239,68,68,0.75);
+      backdrop-filter: blur(4px);
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 2;
+    }
+    .card-del svg { width: 14px; height: 14px; color: #fff; }
+    .card:hover .card-del { opacity: 1; }
+    .card-del:hover { background: var(--red); }
+
+    /* Photo */
+    .card-img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* Card info */
+    .card-info {
+      padding: 8px 10px 10px;
+      border-top: 1px solid var(--border);
+    }
+    .card-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 2px;
     }
-
-    /* ══ MAIN AREA ══ */
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 28px;
-      position: relative;
+    .card-comment {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+      font-style: italic;
+    }
+    .card-time {
+      font-size: 0.68rem;
+      color: rgba(232,232,240,0.3);
+      margin-top: 3px;
     }
 
     /* Empty state */
-    #empty {
+    #emptyState {
+      grid-column: 1 / -1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      text-align: center;
+      padding: 80px 20px;
       gap: 12px;
-      transition: opacity 0.5s;
+      color: var(--muted);
     }
-    #empty.hidden { opacity:0; pointer-events:none; position:absolute; }
+    .empty-icon { font-size: 48px; opacity: 0.5; }
+    .empty-text { font-size: 0.9rem; }
 
-    .empty-emoji { font-size: 56px; animation: bounce 2s ease-in-out infinite; }
-    .empty-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: #fff;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-    }
-    .empty-sub { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
-
-    #qrEmpty {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,215,0,0.4);
-      border-radius: 20px;
-      padding: 20px;
+    /* Loading */
+    #loadingState {
+      grid-column: 1 / -1;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
+      justify-content: center;
+      padding: 80px;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.85rem;
     }
-    .empty-qr-label { font-size: 0.8rem; color: rgba(255,255,255,0.8); }
-    .empty-qr-url   { font-size: 0.9rem; color: #ffd700; font-weight: 500; }
+    .spin {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Photo display */
-    #photoDisplay {
+    /* ── Confirm dialog ── */
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 100;
       display: none;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      gap: 12px;
-    }
-    #photoDisplay.visible { display: flex; }
-
-    /* Photo frame */
-    #photoFrame {
-      position: relative;
-      flex: 1;
-      width: 100%;
-      display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 0;
     }
+    #overlay.show { display: flex; }
 
-    #mainPhoto {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      display: block;
+    #dialog {
+      background: #1e1e30;
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 18px;
-      border: 4px solid rgba(255,255,255,0.9);
-      box-shadow:
-        0 0 0 2px rgba(255,215,0,0.6),
-        0 24px 80px rgba(0,0,0,0.5),
-        0 0 60px rgba(233,30,140,0.25);
-      transition: opacity 0.5s ease;
-      object-fit: contain;
+      padding: 28px 28px 22px;
+      max-width: 380px;
+      width: calc(100% - 40px);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
     }
-    #mainPhoto.fade { opacity: 0; }
+    .dialog-icon { font-size: 36px; margin-bottom: 12px; }
+    .dialog-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .dialog-body {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+    .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .dialog-actions .btn { padding: 9px 20px; font-size: 0.85rem; }
 
-    /* Info overlay */
-    #mainInfo {
-      position: absolute;
-      bottom: 4px; left: 0; right: 0;
-      padding: 32px 24px 16px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.72));
-      border-radius: 0 0 14px 14px;
-      transform: translateY(8px);
-      opacity: 0;
-      transition: opacity 0.5s 0.3s, transform 0.5s 0.3s;
-      pointer-events: none;
+    /* Select-all row */
+    .select-all-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
     }
-    #mainInfo.show { opacity:1; transform:translateY(0); }
-
-    #infoName {
-      font-family: 'Dancing Script', cursive;
-      font-size: 2rem;
-      color: #fff;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-      margin-bottom: 2px;
-    }
-    #infoComment {
-      font-size: 1rem;
-      color: rgba(255,255,255,0.88);
-      font-style: italic;
-      font-weight: 300;
-      text-shadow: 0 1px 6px rgba(0,0,0,0.8);
-    }
-
-    /* Slide counter */
-    #slideCounter {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.5);
-      position: absolute;
-      top: 10px; right: 14px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 100px;
-      padding: 3px 10px;
-    }
-
-    /* Progress bar */
-    #progressWrap {
-      width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 100px;
-      overflow: hidden;
+    .select-all-box {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
       flex-shrink: 0;
     }
-    #progressBar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #ffd700, #ff80ab, #ffd700);
-      background-size: 200% 100%;
-      border-radius: 100px;
-      animation: shimmer 2s linear infinite;
+    .select-all-box.checked {
+      background: var(--check);
+      border-color: var(--check);
     }
-    @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
-
-    /* Confetti canvas */
-    #confetti { position:fixed; inset:0; pointer-events:none; z-index:50; }
+    .select-all-box svg { display: none; }
+    .select-all-box.checked svg { display: block; }
+    .select-all-label { font-size: 0.83rem; color: var(--muted); }
   </style>
 </head>
 <body>
 
-<canvas id="confetti"></canvas>
+<!-- Header -->
+<header>
+  <div class="header-title">
+    🗑️ Quản lý ảnh
+    <span id="totalCount">0 ảnh</span>
+  </div>
 
-<div id="app">
-  <!-- ══ LEFT PANEL ══ -->
-  <aside id="panel">
-    <div class="panel-cake">🎂</div>
-    <div class="panel-title">
-      Sinh nhật sư phụ<br>
-      <span class="name">Duy Linh 3<sup>4</sup></span>
-    </div>
+  <div class="header-actions">
 
-    <div class="panel-divider"><span>♥ ♥ ♥</span></div>
-
-    <p class="qr-label">Quét để chia sẻ ảnh lên màn hình</p>
-    <div id="qrWrap"><canvas id="qrCanvas"></canvas></div>
-    <div class="qr-url" id="qrUrl"></div>
-
-    <div class="live-row">
-      <div class="live-dot"></div>
-      <span>LIVE &nbsp;·&nbsp; <span id="photoCount">0 ảnh</span></span>
-    </div>
-
-    <div id="thumbs"></div>
-  </aside>
-
-  <!-- ══ MAIN AREA ══ -->
-  <main id="main">
-
-    <!-- Empty state -->
-    <div id="empty">
-      <div class="empty-emoji">✨</div>
-      <h2 class="empty-title">Đêm tiệc sắp bắt đầu!</h2>
-      <p class="empty-sub">Khách mời quét mã QR để chia sẻ khoảnh khắc</p>
-      <div id="qrEmpty">
-        <canvas id="qrEmptyCanvas"></canvas>
-        <div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
-        <div class="empty-qr-url" id="emptyUrl"></div>
+    <!-- Select all -->
+    <label class="select-all-wrap" id="selectAllWrap">
+      <div class="select-all-box" id="selectAllBox">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1.5,5 4,7.5 8.5,2.5"/>
+        </svg>
       </div>
-    </div>
+      <span class="select-all-label">Chọn tất cả</span>
+    </label>
 
-    <!-- Photo display -->
-    <div id="photoDisplay">
-      <div id="photoFrame">
-        <img id="mainPhoto" src="" alt="">
-        <div id="mainInfo">
-          <div id="infoName"></div>
-          <div id="infoComment"></div>
-        </div>
-        <div id="slideCounter"></div>
-      </div>
-      <div id="progressWrap"><div id="progressBar"></div></div>
-    </div>
+    <span class="selected-info" id="selectedInfo" style="display:none"></span>
 
-  </main>
+    <!-- Delete selected -->
+    <button class="btn btn-danger" id="deleteSelBtn" disabled>
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+      Xoá đã chọn
+    </button>
+
+    <!-- Delete all -->
+    <button class="btn btn-danger-solid" id="deleteAllBtn">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+      Xoá tất cả
+    </button>
+
+    <!-- Back to present -->
+    <a href="/present/" class="btn btn-ghost" style="text-decoration:none">
+      ↗ Màn hình chiếu
+    </a>
+
+  </div>
+</header>
+
+<!-- Grid -->
+<div id="grid">
+  <div id="loadingState"><div class="spin"></div> Đang tải...</div>
 </div>
 
-<!-- QR code lib -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Confirm overlay -->
+<div id="overlay">
+  <div id="dialog">
+    <div class="dialog-icon" id="dialogIcon">⚠️</div>
+    <div class="dialog-title" id="dialogTitle"></div>
+    <div class="dialog-body"  id="dialogBody"></div>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost"         id="dialogCancel">Huỷ</button>
+      <button class="btn btn-danger-solid"  id="dialogConfirm">Xoá</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js';
-import { getFirestore, collection, query, orderBy, limit, onSnapshot }
+import { getFirestore, collection, query, orderBy, onSnapshot,
+         deleteDoc, doc, writeBatch }
   from 'https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -401,217 +398,205 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
-// ── QR Codes ──
-const guestUrl = window.location.origin;
-
-function makeQR(el, size) {
-  el.innerHTML = '';
-  new QRCode(el, {
-    text: guestUrl, width: size, height: size,
-    colorDark: '#7b1fa2', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-  // Fix: QRCode lib creates an img inside div; move canvas out if needed
-}
-makeQR(document.getElementById('qrWrap').querySelector('#qrCanvas').parentElement || document.getElementById('qrWrap'), 120);
-// Actually create fresh QRCode in the wrapper divs
-document.getElementById('qrWrap').innerHTML = '';
-new QRCode(document.getElementById('qrWrap'), { text: guestUrl, width: 120, height: 120, colorDark: '#7b1fa2', colorLight: '#f8f8f8', correctLevel: QRCode.CorrectLevel.M });
-
-document.getElementById('qrEmpty').innerHTML = '';
-new QRCode(document.getElementById('qrEmpty'), { text: guestUrl, width: 180, height: 180, colorDark: '#7b1fa2', colorLight: '#f8f8f8', correctLevel: QRCode.CorrectLevel.M });
-// Re-add labels after QRCode clears innerHTML
-document.getElementById('qrEmpty').insertAdjacentHTML('beforeend',
-  `<div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
-   <div class="empty-qr-url" id="emptyUrl"></div>`);
-
-document.getElementById('qrUrl').textContent     = guestUrl.replace('https://','');
-document.getElementById('emptyUrl').textContent   = guestUrl.replace('https://','');
-
-// ── Slideshow state ──
-const SLIDE_MS = 10000;
-let allPhotos    = [];
-let currentIdx   = 0;
-let slideTimer   = null;
-let prevNewestId = null;
+// ── State ──
+let allPhotos   = [];
+let selectedIds = new Set();
 
 // ── Elements ──
-const elEmpty   = document.getElementById('empty');
-const elDisplay = document.getElementById('photoDisplay');
-const elPhoto   = document.getElementById('mainPhoto');
-const elInfo    = document.getElementById('mainInfo');
-const elName    = document.getElementById('infoName');
-const elComment = document.getElementById('infoComment');
-const elCounter = document.getElementById('slideCounter');
-const elBar     = document.getElementById('progressBar');
-const elThumbs  = document.getElementById('thumbs');
-const elCount   = document.getElementById('photoCount');
+const $ = id => document.getElementById(id);
+const elGrid      = $('grid');
+const elTotal     = $('totalCount');
+const elSelInfo   = $('selectedInfo');
+const elDelSel    = $('deleteSelBtn');
+const elDelAll    = $('deleteAllBtn');
+const elSelAllBox = $('selectAllBox');
+const elLoading   = $('loadingState');
 
 // ── Firestore listener ──
-const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(30));
+const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'));
+
 onSnapshot(q, snap => {
-  const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.imageUrl);
-  elCount.textContent = fresh.length + ' ảnh';
-
-  if (!fresh.length) { showEmpty(); return; }
-
-  const newestId = fresh[0].id;
-  allPhotos = fresh;
-
-  if (newestId !== prevNewestId) {
-    prevNewestId = newestId;
-    goToIndex(0);          // Jump to newest
-    spawnConfetti();
-  }
-
-  renderThumbs();
+  allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // Clean up selected IDs that no longer exist
+  const existingIds = new Set(allPhotos.map(p => p.id));
+  selectedIds = new Set([...selectedIds].filter(id => existingIds.has(id)));
+  renderGrid();
 });
 
-// ── Show / hide states ──
-function showEmpty() {
-  elEmpty.classList.remove('hidden');
-  elDisplay.classList.remove('visible');
-  clearTimeout(slideTimer);
-}
+// ── Render grid ──
+function renderGrid() {
+  elLoading.remove?.();
+  elLoading.style?.display !== undefined && (elLoading.style.display = 'none');
+  elGrid.innerHTML = '';
 
-function showDisplay() {
-  elEmpty.classList.add('hidden');
-  elDisplay.classList.add('visible');
-}
+  elTotal.textContent = `${allPhotos.length} ảnh`;
+  updateSelectionUI();
 
-// ── Go to photo at index ──
-function goToIndex(idx) {
-  currentIdx = ((idx % allPhotos.length) + allPhotos.length) % allPhotos.length;
-  const photo = allPhotos[currentIdx];
-  if (!photo) return;
+  if (!allPhotos.length) {
+    elGrid.innerHTML = `
+      <div id="emptyState">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">Chưa có ảnh nào được chia sẻ</div>
+      </div>`;
+    return;
+  }
 
-  showDisplay();
+  allPhotos.forEach(photo => {
+    const card = document.createElement('div');
+    card.className = 'card' + (selectedIds.has(photo.id) ? ' selected' : '');
+    card.dataset.id = photo.id;
 
-  // Fade out → swap → fade in
-  elPhoto.classList.add('fade');
-  elInfo.classList.remove('show');
+    const time = photo.timestamp?.toDate
+      ? photo.timestamp.toDate().toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' })
+      : '';
 
-  setTimeout(() => {
-    elPhoto.src       = photo.imageUrl;
-    elName.textContent    = photo.name || '';
-    elComment.textContent = photo.comment ? `"${photo.comment}"` : '';
-    elCounter.textContent = `${currentIdx + 1} / ${allPhotos.length}`;
-    elPhoto.onload = () => {
-      elPhoto.classList.remove('fade');
-      setTimeout(() => elInfo.classList.add('show'), 200);
-    };
-    // If already cached (no onload fires), just show
-    if (elPhoto.complete && elPhoto.naturalWidth) {
-      elPhoto.classList.remove('fade');
-      setTimeout(() => elInfo.classList.add('show'), 200);
-    }
-  }, 500);
+    card.innerHTML = `
+      <div class="card-check">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="2,6 5,9 10,3"/>
+        </svg>
+      </div>
+      <button class="card-del" data-del="${photo.id}" title="Xoá ảnh này">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+      <img class="card-img" src="${photo.imageUrl}" loading="lazy" alt="">
+      <div class="card-info">
+        <div class="card-name">${esc(photo.name || 'Ẩn danh')}</div>
+        ${photo.comment ? `<div class="card-comment">"${esc(photo.comment)}"</div>` : ''}
+        <div class="card-time">${time}</div>
+      </div>`;
 
-  startProgress();
-  scheduleNext();
-  renderThumbs();
-}
+    // Toggle selection
+    card.addEventListener('click', e => {
+      if (e.target.closest('.card-del')) return;
+      toggleSelect(photo.id);
+    });
 
-// ── Auto-advance ──
-function scheduleNext() {
-  clearTimeout(slideTimer);
-  if (allPhotos.length <= 1) return;
-  slideTimer = setTimeout(() => {
-    goToIndex(currentIdx + 1);
-  }, SLIDE_MS);
-}
+    // Delete single
+    card.querySelector('.card-del').addEventListener('click', e => {
+      e.stopPropagation();
+      confirmDelete(
+        `Xoá ảnh của ${photo.name || 'Ẩn danh'}?`,
+        `Ảnh này sẽ bị xoá vĩnh viễn khỏi màn hình chiếu.`,
+        () => deleteSingle(photo.id)
+      );
+    });
 
-// ── Progress bar ──
-function startProgress() {
-  elBar.style.transition = 'none';
-  elBar.style.width = '0%';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    elBar.style.transition = `width ${SLIDE_MS}ms linear`;
-    elBar.style.width = '100%';
-  }));
-}
-
-// ── Thumbnails ──
-function renderThumbs() {
-  elThumbs.innerHTML = '';
-  // Show up to 4 thumbs (skip current)
-  const others = allPhotos.filter((_, i) => i !== currentIdx).slice(0, 4);
-  others.forEach((p, i) => {
-    const origIdx = allPhotos.indexOf(p);
-    const div = document.createElement('div');
-    div.className = 'thumb';
-    div.innerHTML = `<img src="${p.imageUrl}" loading="lazy" alt=""><div class="thumb-name">${esc(p.name)}</div>`;
-    div.addEventListener('click', () => goToIndex(origIdx));
-    elThumbs.appendChild(div);
+    elGrid.appendChild(card);
   });
 }
 
-// ── Confetti ──
-function spawnConfetti() {
-  const canvas = document.getElementById('confetti');
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  const colors = ['#ffd700','#ff80ab','#fff','#ff4d9d','#c44dff','#f9a825'];
-  const particles = Array.from({ length: 80 }, () => ({
-    x: Math.random() * canvas.width,
-    y: -10,
-    r: Math.random() * 6 + 3,
-    color: colors[Math.floor(Math.random() * colors.length)],
-    vx: (Math.random() - 0.5) * 5,
-    vy: Math.random() * 4 + 2,
-    alpha: 1,
-    rot: Math.random() * 360,
-    drot: (Math.random() - 0.5) * 10,
-  }));
-  let raf;
-  function step() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    let alive = false;
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.1;
-      p.rot += p.drot; p.alpha -= 0.011;
-      if (p.alpha <= 0) return; alive = true;
-      ctx.save();
-      ctx.globalAlpha = p.alpha;
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot * Math.PI / 180);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 1.6);
-      ctx.restore();
-    });
-    if (alive) raf = requestAnimationFrame(step);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  cancelAnimationFrame(raf);
-  step();
+// ── Selection ──
+function toggleSelect(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateSelectionUI();
+  // Update card style without full re-render
+  document.querySelectorAll(`.card[data-id="${id}"]`).forEach(c => {
+    c.classList.toggle('selected', selectedIds.has(id));
+  });
 }
+
+$('selectAllWrap').addEventListener('click', () => {
+  if (selectedIds.size === allPhotos.length && allPhotos.length > 0) {
+    selectedIds.clear();
+  } else {
+    allPhotos.forEach(p => selectedIds.add(p.id));
+  }
+  renderGrid();
+});
+
+function updateSelectionUI() {
+  const n = selectedIds.size;
+  const all = allPhotos.length;
+
+  elDelSel.disabled = n === 0;
+  elDelSel.textContent = n > 0 ? `Xoá đã chọn (${n})` : 'Xoá đã chọn';
+  // Fix: re-add icon
+  elDelSel.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Xoá đã chọn${n > 0 ? ` (${n})` : ''}`;
+  elDelSel.disabled = n === 0;
+
+  if (n > 0) {
+    elSelInfo.style.display = '';
+    elSelInfo.textContent = `${n}/${all} đã chọn`;
+  } else {
+    elSelInfo.style.display = 'none';
+  }
+
+  const isAll = all > 0 && n === all;
+  elSelAllBox.classList.toggle('checked', isAll);
+}
+
+// ── Delete ──
+async function deleteSingle(id) {
+  try {
+    await deleteDoc(doc(db, 'photos', id));
+    selectedIds.delete(id);
+  } catch (e) {
+    alert('Lỗi xoá: ' + e.message);
+  }
+}
+
+elDelSel.addEventListener('click', () => {
+  const ids = [...selectedIds];
+  confirmDelete(
+    `Xoá ${ids.length} ảnh đã chọn?`,
+    `${ids.length} ảnh này sẽ bị xoá vĩnh viễn.`,
+    async () => {
+      try {
+        const batch = writeBatch(db);
+        ids.forEach(id => batch.delete(doc(db, 'photos', id)));
+        await batch.commit();
+        selectedIds.clear();
+      } catch (e) { alert('Lỗi xoá: ' + e.message); }
+    }
+  );
+});
+
+elDelAll.addEventListener('click', () => {
+  if (!allPhotos.length) return;
+  confirmDelete(
+    `Xoá tất cả ${allPhotos.length} ảnh?`,
+    `Toàn bộ ảnh đã chia sẻ sẽ bị xoá vĩnh viễn. Không thể khôi phục.`,
+    async () => {
+      try {
+        // Batch delete in chunks of 500
+        const ids = allPhotos.map(p => p.id);
+        for (let i = 0; i < ids.length; i += 499) {
+          const batch = writeBatch(db);
+          ids.slice(i, i + 499).forEach(id => batch.delete(doc(db, 'photos', id)));
+          await batch.commit();
+        }
+        selectedIds.clear();
+      } catch (e) { alert('Lỗi xoá: ' + e.message); }
+    }
+  );
+});
+
+// ── Confirm dialog ──
+let pendingAction = null;
+
+function confirmDelete(title, body, onConfirm) {
+  $('dialogTitle').textContent   = title;
+  $('dialogBody').textContent    = body;
+  pendingAction = onConfirm;
+  $('overlay').classList.add('show');
+}
+
+$('dialogCancel').addEventListener('click',  () => { $('overlay').classList.remove('show'); pendingAction = null; });
+$('dialogConfirm').addEventListener('click', async () => {
+  $('overlay').classList.remove('show');
+  if (pendingAction) { await pendingAction(); pendingAction = null; }
+});
+$('overlay').addEventListener('click', e => {
+  if (e.target === $('overlay')) { $('overlay').classList.remove('show'); pendingAction = null; }
+});
 
 function esc(s) {
   return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-</script>
-
-<!-- Floating hearts -->
-<script>
-(function() {
-  const hearts = ['❤️','🩷','💕','💖','💗','💓','🌸','✨','💫','🎀'];
-  for (let i = 0; i < 22; i++) {
-    const el = document.createElement('div');
-    el.className = 'fheart';
-    el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-    const size = Math.random() * 22 + 12;
-    const dur  = Math.random() * 12 + 8;
-    const delay = Math.random() * 10;
-    el.style.cssText = `
-      left: ${Math.random() * 100}vw;
-      font-size: ${size}px;
-      animation-duration: ${dur}s;
-      animation-delay: ${delay}s;
-    `;
-    document.body.appendChild(el);
-  }
-})();
 </script>
 
 </body>
