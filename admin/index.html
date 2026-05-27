@@ -288,6 +288,79 @@
     .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; }
     .dialog-actions .btn { padding: 9px 20px; font-size: 0.85rem; }
 
+    /* ── Pin gate ── */
+    #pinGate {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #pinGate.unlocked { display: none; }
+    .pin-box {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 36px 32px;
+      max-width: 320px;
+      width: calc(100% - 40px);
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    }
+    .pin-icon  { font-size: 44px; margin-bottom: 14px; }
+    .pin-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 5px; }
+    .pin-sub   { font-size: 0.82rem; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+    .pin-dots  {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .pin-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.25);
+      background: transparent;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+    .pin-dot.error  { background: var(--red);  border-color: var(--red);  }
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .pin-key {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      padding: 14px 0;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+    .pin-key:hover  { background: rgba(255,255,255,0.12); }
+    .pin-key:active { transform: scale(0.93); }
+    .pin-key.del    { font-size: 1rem; color: var(--muted); }
+    .pin-key.empty  { visibility: hidden; cursor: default; }
+    .pin-error {
+      font-size: 0.78rem;
+      color: var(--red);
+      min-height: 18px;
+      margin-top: 12px;
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-7px); }
+      40%,80%  { transform: translateX(7px); }
+    }
+    .pin-box.shaking { animation: shake 0.35s; }
+
     /* Select-all row */
     .select-all-wrap {
       display: flex;
@@ -314,6 +387,36 @@
   </style>
 </head>
 <body>
+
+<!-- Pin gate -->
+<div id="pinGate">
+  <div class="pin-box" id="pinBox">
+    <div class="pin-icon">🔐</div>
+    <div class="pin-title">Khu vực quản trị</div>
+    <div class="pin-sub">Nhập mã PIN 4 chữ số<br>để quản lý ảnh</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div class="pin-keypad">
+      <button class="pin-key" data-k="1">1</button>
+      <button class="pin-key" data-k="2">2</button>
+      <button class="pin-key" data-k="3">3</button>
+      <button class="pin-key" data-k="4">4</button>
+      <button class="pin-key" data-k="5">5</button>
+      <button class="pin-key" data-k="6">6</button>
+      <button class="pin-key" data-k="7">7</button>
+      <button class="pin-key" data-k="8">8</button>
+      <button class="pin-key" data-k="9">9</button>
+      <button class="pin-key empty"></button>
+      <button class="pin-key" data-k="0">0</button>
+      <button class="pin-key del" data-k="del">⌫</button>
+    </div>
+    <div class="pin-error" id="pinError"></div>
+  </div>
+</div>
 
 <!-- Header -->
 <header>
@@ -378,6 +481,65 @@
   </div>
 </div>
 
+
+<!-- Pin gate logic (plain script, runs immediately) -->
+<script>
+(function () {
+  const CORRECT = '0404';
+  let entered = '';
+
+  const gate   = document.getElementById('pinGate');
+  const box    = document.getElementById('pinBox');
+  const errEl  = document.getElementById('pinError');
+  const dots   = [0,1,2,3].map(i => document.getElementById('d' + i));
+
+  function updateDots(isError) {
+    dots.forEach((d, i) => {
+      d.className = 'pin-dot' +
+        (i < entered.length ? (isError ? ' error' : ' filled') : '');
+    });
+  }
+
+  function press(k) {
+    errEl.textContent = '';
+    if (k === 'del') {
+      entered = entered.slice(0, -1);
+      updateDots();
+      return;
+    }
+    if (entered.length >= 4) return;
+    entered += k;
+    updateDots();
+
+    if (entered.length === 4) {
+      if (entered === CORRECT) {
+        gate.classList.add('unlocked');
+      } else {
+        updateDots(true);
+        box.classList.add('shaking');
+        errEl.textContent = 'Mã PIN không đúng';
+        setTimeout(() => {
+          entered = '';
+          updateDots();
+          box.classList.remove('shaking');
+          errEl.textContent = '';
+        }, 900);
+      }
+    }
+  }
+
+  document.querySelectorAll('.pin-key[data-k]').forEach(btn => {
+    btn.addEventListener('click', () => press(btn.dataset.k));
+  });
+
+  // Also support physical keyboard
+  document.addEventListener('keydown', e => {
+    if (gate.classList.contains('unlocked')) return;
+    if (e.key >= '0' && e.key <= '9') press(e.key);
+    else if (e.key === 'Backspace') press('del');
+  });
+})();
+</script>
 
 <!-- Firebase -->
 <script type="module">

@@ -49,7 +49,7 @@
     /* ══ LEFT PANEL ══ */
     #panel {
       flex-shrink: 0;
-      width: 250px;
+      width: 313px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -145,7 +145,14 @@
       grid-template-columns: 1fr 1fr;
       gap: 6px;
       width: 100%;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      align-content: start;
     }
+    #thumbs::-webkit-scrollbar { width: 4px; }
+    #thumbs::-webkit-scrollbar-track { background: transparent; }
+    #thumbs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
     .thumb {
       aspect-ratio: 1;
       border-radius: 8px;
@@ -429,7 +436,8 @@ document.getElementById('qrUrl').textContent     = guestUrl.replace('https://','
 document.getElementById('emptyUrl').textContent   = guestUrl.replace('https://','');
 
 // ── Slideshow state ──
-const SLIDE_MS = 10000;
+const NEW_SLIDE_MS = 15000;   // ảnh mới: 15 giây
+const OLD_SLIDE_MS =  5000;   // ảnh cũ: 5 giây
 let allPhotos    = [];
 let currentIdx   = 0;
 let slideTimer   = null;
@@ -460,7 +468,7 @@ onSnapshot(q, snap => {
 
   if (newestId !== prevNewestId) {
     prevNewestId = newestId;
-    goToIndex(0);          // Jump to newest
+    goToIndex(0, true);    // Jump to newest (show 15s)
     spawnConfetti();
   }
 
@@ -480,10 +488,11 @@ function showDisplay() {
 }
 
 // ── Go to photo at index ──
-function goToIndex(idx) {
+function goToIndex(idx, isNew = false) {
   currentIdx = ((idx % allPhotos.length) + allPhotos.length) % allPhotos.length;
   const photo = allPhotos[currentIdx];
   if (!photo) return;
+  const duration = isNew ? NEW_SLIDE_MS : OLD_SLIDE_MS;
 
   showDisplay();
 
@@ -507,26 +516,33 @@ function goToIndex(idx) {
     }
   }, 500);
 
-  startProgress();
-  scheduleNext();
+  startProgress(duration);
+  scheduleNext(duration);
   renderThumbs();
 }
 
-// ── Auto-advance ──
-function scheduleNext() {
+// ── Auto-advance (random, not sequential) ──
+function scheduleNext(duration) {
   clearTimeout(slideTimer);
   if (allPhotos.length <= 1) return;
   slideTimer = setTimeout(() => {
-    goToIndex(currentIdx + 1);
-  }, SLIDE_MS);
+    let nextIdx;
+    if (allPhotos.length === 2) {
+      nextIdx = 1 - currentIdx;
+    } else {
+      do { nextIdx = Math.floor(Math.random() * allPhotos.length); }
+      while (nextIdx === currentIdx);
+    }
+    goToIndex(nextIdx);
+  }, duration);
 }
 
 // ── Progress bar ──
-function startProgress() {
+function startProgress(duration) {
   elBar.style.transition = 'none';
   elBar.style.width = '0%';
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    elBar.style.transition = `width ${SLIDE_MS}ms linear`;
+    elBar.style.transition = `width ${duration}ms linear`;
     elBar.style.width = '100%';
   }));
 }
@@ -534,8 +550,8 @@ function startProgress() {
 // ── Thumbnails ──
 function renderThumbs() {
   elThumbs.innerHTML = '';
-  // Show up to 4 thumbs (skip current)
-  const others = allPhotos.filter((_, i) => i !== currentIdx).slice(0, 4);
+  // Show all photos except the one currently displayed
+  const others = allPhotos.filter((_, i) => i !== currentIdx);
   others.forEach((p, i) => {
     const origIdx = allPhotos.indexOf(p);
     const div = document.createElement('div');
