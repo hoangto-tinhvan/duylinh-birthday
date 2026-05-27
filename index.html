@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#070715">
+  <title>🎂 Sinh nhật Duy Linh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a74a;
+      --gold-light: #e8d5a3;
+      --gold-glow: rgba(201,167,74,0.25);
+      --bg: #070715;
+      --bg-card: rgba(255,255,255,0.045);
+      --border: rgba(201,167,74,0.22);
+      --text: #f0e6c8;
+      --text-muted: rgba(240,230,200,0.5);
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas#bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Screens ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1;
+      opacity: 0;
+      transform: translateY(18px);
+      pointer-events: none;
+      transition: opacity 0.45s ease, transform 0.45s ease;
+      overflow-y: auto;
+    }
+    .screen.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+    .screen.exit {
+      opacity: 0;
+      transform: translateY(-18px);
+      transition-duration: 0.25s;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 420px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 80px rgba(201,167,74,0.04), 0 24px 60px rgba(0,0,0,0.4);
+    }
+
+    /* ── Logo & headings ── */
+    .cake {
+      font-size: 52px;
+      text-align: center;
+      display: block;
+      margin-bottom: 4px;
+      animation: float 3.2s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    .ornament {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0 18px;
+    }
+    .ornament::before, .ornament::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,167,74,0.4), transparent);
+    }
+    .ornament span { color: var(--gold); font-size: 13px; letter-spacing: 4px; }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.75rem;
+      text-align: center;
+      color: var(--gold-light);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+    .tagline {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 300;
+      margin-bottom: 28px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Input ── */
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.055);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-glow);
+    }
+    input[type="text"]::placeholder, textarea::placeholder { color: var(--text-muted); }
+    textarea { resize: none; height: 78px; }
+    .input-wrap { margin-bottom: 16px; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.975rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.4px;
+      transition: all 0.22s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #b8922e 0%, #e8d5a3 50%, #c9a74a 100%);
+      background-size: 200% 100%;
+      color: #1a0e00;
+      box-shadow: 0 4px 22px rgba(201,167,74,0.38);
+    }
+    .btn-gold:hover { background-position: right center; box-shadow: 0 6px 32px rgba(201,167,74,0.52); transform: translateY(-1px); }
+    .btn-gold:active { transform: translateY(0); box-shadow: 0 2px 12px rgba(201,167,74,0.3); }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+    .btn-ghost:hover { border-color: var(--gold); color: var(--gold-light); }
+
+    /* ── Screen 1 input hint ── */
+    .hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    /* ── Screen 2: Camera ── */
+    .name-badge {
+      position: fixed;
+      top: env(safe-area-inset-top, 20px);
+      right: 20px;
+      background: rgba(7,7,21,0.85);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      color: var(--gold);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .welcome-area {
+      text-align: center;
+      max-width: 340px;
+    }
+    .sparkle-icon { font-size: 36px; margin-bottom: 16px; display: block; }
+
+    .welcome-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--gold-light);
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+    .welcome-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 300;
+      margin-bottom: 44px;
+      line-height: 1.6;
+    }
+
+    /* Camera button */
+    .cam-btn {
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(201,167,74,0.6);
+      background: radial-gradient(circle, rgba(201,167,74,0.12) 0%, rgba(201,167,74,0.03) 70%);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 0 auto;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.2s, box-shadow 0.3s;
+      box-shadow: 0 0 48px rgba(201,167,74,0.12);
+    }
+    .cam-btn::before {
+      content: '';
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,167,74,0.22);
+      animation: ring 2.4s ease-in-out infinite;
+    }
+    .cam-btn::after {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,167,74,0.1);
+      animation: ring 2.4s ease-in-out infinite 0.6s;
+    }
+    @keyframes ring {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.4; }
+    }
+    .cam-btn svg { width: 42px; height: 42px; color: var(--gold); }
+    .cam-btn span { font-size: 0.7rem; color: var(--gold); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
+    .cam-btn:active { transform: scale(0.96); }
+    .cam-btn:hover { box-shadow: 0 0 70px rgba(201,167,74,0.25); }
+
+    /* ── Screen 3: Preview ── */
+    .preview-wrap { width: 100%; max-width: 420px; }
+
+    #photoPreview {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+      display: block;
+      margin-bottom: 18px;
+    }
+
+    .label {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    /* ── Screen 4: Success ── */
+    .success-wrap { text-align: center; }
+    .success-emoji {
+      font-size: 76px;
+      display: block;
+      margin-bottom: 20px;
+      animation: pop 0.5s cubic-bezier(0.36,0.07,0.19,0.97);
+    }
+    @keyframes pop {
+      0% { transform: scale(0) rotate(-10deg); }
+      70% { transform: scale(1.15) rotate(4deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .success-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+    }
+    .success-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    /* ── Upload toast ── */
+    #toast {
+      position: fixed;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(7,7,21,0.94);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 22px;
+      font-size: 0.83rem;
+      color: var(--gold-light);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .spin {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(201,167,74,0.3);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* shake */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+
+<!-- ── Screen 1: Nhập tên ── -->
+<div class="screen active" id="s-name">
+  <div class="card">
+    <span class="cake">🎂</span>
+    <div class="ornament"><span>✦ ✦ ✦</span></div>
+    <h1>Sinh nhật<br>Duy Linh</h1>
+    <p class="tagline">Nhập tên của bạn để tham gia</p>
+    <div class="input-wrap">
+      <input type="text" id="nameInput" placeholder="Tên của bạn..." maxlength="30"
+             autocomplete="off" autocapitalize="words" spellcheck="false">
+    </div>
+    <button class="btn btn-gold" id="enterBtn">Vào tiệc &rarr;</button>
+    <p class="hint">Nhấn Enter hoặc bấm nút để tiếp tục</p>
+  </div>
+</div>
+
+<!-- ── Screen 2: Chụp ảnh ── -->
+<div class="screen" id="s-camera">
+  <div class="name-badge" id="nameBadge"></div>
+  <div class="welcome-area">
+    <span class="sparkle-icon">✨</span>
+    <h2 class="welcome-title">Chào mừng đến với đêm tiệc sinh nhật sư phụ Duy Linh</h2>
+    <p class="welcome-sub">Hãy chụp ảnh và chia sẻ<br>những khoảnh khắc lên màn hình</p>
+
+    <div class="cam-btn" id="camBtn">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+          d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <span>Chụp ảnh</span>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+</div>
+
+<!-- ── Screen 3: Xem trước + comment ── -->
+<div class="screen" id="s-preview">
+  <div class="preview-wrap">
+    <img id="photoPreview" src="" alt="">
+    <p class="label">Thêm lời nhắn (không bắt buộc)</p>
+    <div class="input-wrap">
+      <textarea id="commentInput" placeholder="Viết điều gì đó..."></textarea>
+    </div>
+    <button class="btn btn-gold" id="shareBtn">🚀 &nbsp;Chia sẻ lên màn hình</button>
+    <button class="btn btn-ghost" id="retakeBtn">← &nbsp;Chụp lại</button>
+  </div>
+</div>
+
+<!-- ── Screen 4: Đã chia sẻ ── -->
+<div class="screen" id="s-success">
+  <div class="success-wrap">
+    <span class="success-emoji">🎉</span>
+    <h2 class="success-title">Đã chia sẻ!</h2>
+    <p class="success-sub">Ảnh của bạn đã xuất hiện<br>trên màn hình tiệc rồi đó!</p>
+    <div style="max-width:280px; margin:0 auto;">
+      <button class="btn btn-gold" id="moreBtn">📷 &nbsp;Chụp thêm ảnh</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div id="toast"><div class="spin"></div><span>Đang chia sẻ lên màn hình...</span></div>
+
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+
+// ═══════════════════════════════════════════════════════════════
+//  🔧 ĐIỀN THÔNG TIN FIREBASE VÀO ĐÂY (xem README.md)
+// ═══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "FIREBASE_API_KEY",
+  authDomain:        "FIREBASE_PROJECT_ID.firebaseapp.com",
+  projectId:         "FIREBASE_PROJECT_ID",
+  storageBucket:     "FIREBASE_PROJECT_ID.appspot.com",
+  messagingSenderId: "FIREBASE_MESSAGING_SENDER_ID",
+  appId:             "FIREBASE_APP_ID",
+};
+// ═══════════════════════════════════════════════════════════════
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const st  = getStorage(app);
+
+// ── state ──
+let userName    = '';
+let blobToShare = null;
+
+// ── helpers ──
+const $ = id => document.getElementById(id);
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(el => {
+    if (el.id === id) { el.classList.remove('exit'); el.classList.add('active'); }
+    else              { el.classList.remove('active'); el.classList.add('exit'); }
+  });
+}
+
+function toast(visible) { $('toast').classList.toggle('show', visible); }
+
+// ── Screen 1: tên ──
+$('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('enterBtn').click(); });
+
+$('enterBtn').addEventListener('click', () => {
+  const name = $('nameInput').value.trim();
+  if (!name) { $('nameInput').classList.add('shake'); setTimeout(() => $('nameInput').classList.remove('shake'), 500); $('nameInput').focus(); return; }
+  userName = name;
+  $('nameBadge').textContent = name;
+  show('s-camera');
+});
+
+// ── Screen 2: camera ──
+$('camBtn').addEventListener('click', () => $('fileInput').click());
+
+$('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const { blob, dataUrl } = await compress(file);
+  blobToShare = blob;
+  $('photoPreview').src = dataUrl;
+  $('commentInput').value = '';
+  show('s-preview');
+});
+
+// ── Screen 3: preview ──
+$('retakeBtn').addEventListener('click', () => { blobToShare = null; show('s-camera'); });
+
+$('shareBtn').addEventListener('click', async () => {
+  if (!blobToShare) return;
+  $('shareBtn').disabled = true;
+  toast(true);
+
+  try {
+    const id  = `${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const sRef = ref(st, `photos/${id}.jpg`);
+    await uploadBytes(sRef, blobToShare, { contentType: 'image/jpeg' });
+    const url = await getDownloadURL(sRef);
+
+    await addDoc(collection(db, 'photos'), {
+      name:      userName,
+      comment:   $('commentInput').value.trim(),
+      imageUrl:  url,
+      timestamp: serverTimestamp(),
+    });
+
+    toast(false);
+    show('s-success');
+  } catch (err) {
+    console.error(err);
+    alert('Có lỗi xảy ra 😢 Thử lại nhé!');
+    toast(false);
+  }
+  $('shareBtn').disabled = false;
+});
+
+// ── Screen 4: chụp thêm ──
+$('moreBtn').addEventListener('click', () => { blobToShare = null; show('s-camera'); });
+
+// ── Compress image ──
+function compress(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1920;
+        let { width: w, height: h } = img;
+        if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
+        else if (h > MAX)           { w = Math.round(w * MAX / h); h = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        canvas.toBlob(blob => resolve({ blob, dataUrl }), 'image/jpeg', 0.85);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+</script>
+
+
+<!-- Starfield background -->
+<script>
+(function() {
+  const canvas = document.getElementById('bg');
+  const ctx    = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 90 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.4 + 0.3,
+      base: Math.random() * 0.55 + 0.08,
+      speed: Math.random() * 0.35 + 0.06,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = Date.now() / 1000;
+    stars.forEach(s => {
+      const alpha = s.base * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,167,74,${alpha.toFixed(3)})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  draw();
+  window.addEventListener('resize', resize);
+})();
+</script>
+
+</body>
+</html>

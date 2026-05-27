@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎂 Sinh nhật Duy Linh — Màn hình tiệc</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #c9a74a;
+      --gold-light: #e8d5a3;
+      --gold-dim: rgba(201,167,74,0.35);
+      --bg: #060614;
+      --text: #f0e6c8;
+      --text-muted: rgba(240,230,200,0.5);
+      --bottom-h: 160px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+    }
+
+    canvas#bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    #app {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid rgba(201,167,74,0.1);
+    }
+
+    .party-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--gold-light);
+      letter-spacing: 0.5px;
+    }
+    .party-title span { font-style: italic; opacity: 0.75; font-size: 1.15rem; }
+
+    .header-right { display: flex; align-items: center; gap: 20px; }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      color: var(--gold);
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .live-dot {
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(74,222,128,0.8);
+      animation: livepulse 1.8s ease-in-out infinite;
+    }
+    @keyframes livepulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    #photoCount {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* ── Main area ── */
+    #main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Empty state ── */
+    #empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.5s;
+    }
+    #empty.hidden { opacity: 0; pointer-events: none; }
+
+    .empty-cake { font-size: 56px; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    .empty-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .empty-sub {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    /* Big QR for empty state */
+    #qrEmpty {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(201,167,74,0.25);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    #qrEmpty .qr-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+    #qrEmpty .qr-url {
+      font-size: 0.9rem;
+      color: var(--gold);
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Photo display ── */
+    #photoDisplay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    #photoDisplay.visible { opacity: 1; pointer-events: all; }
+
+    #mainPhotoWrap {
+      position: relative;
+      max-width: calc(100vw - 80px);
+      max-height: calc(100vh - var(--bottom-h) - 90px);
+      width: auto;
+      height: auto;
+    }
+
+    #mainPhoto {
+      max-width: 100%;
+      max-height: calc(100vh - var(--bottom-h) - 90px);
+      width: auto;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+      object-fit: contain;
+      box-shadow:
+        0 0 0 1px rgba(201,167,74,0.25),
+        0 24px 80px rgba(0,0,0,0.7);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    #mainPhoto.fade-in {
+      animation: fadePhotoIn 0.7s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+    @keyframes fadePhotoIn {
+      from { opacity: 0; transform: scale(0.93); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* Vignette overlay on main photo */
+    #mainPhotoWrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: linear-gradient(to top, rgba(6,6,20,0.85) 0%, rgba(6,6,20,0.1) 40%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Info overlay */
+    #mainInfo {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 24px;
+      z-index: 2;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: opacity 0.5s 0.3s, transform 0.5s 0.3s;
+    }
+    #mainInfo.show { opacity: 1; transform: translateY(0); }
+
+    .info-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+    }
+    .info-comment {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.8);
+      font-style: italic;
+      font-weight: 300;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+    }
+    .info-time {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 3px;
+    }
+
+    /* New photo glow burst */
+    #glowRing {
+      position: absolute;
+      inset: -20px;
+      border-radius: 24px;
+      border: 2px solid rgba(201,167,74,0.6);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+    #glowRing.burst {
+      animation: glowBurst 1.2s ease-out forwards;
+    }
+    @keyframes glowBurst {
+      0%   { opacity: 1; transform: scale(1); box-shadow: 0 0 40px rgba(201,167,74,0.5); }
+      100% { opacity: 0; transform: scale(1.08); }
+    }
+
+    /* ── Bottom strip ── */
+    #bottom {
+      flex-shrink: 0;
+      height: var(--bottom-h);
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border-top: 1px solid rgba(201,167,74,0.08);
+      background: rgba(6,6,20,0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Thumbnails */
+    #thumbs {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      overflow: hidden;
+    }
+
+    .thumb {
+      flex-shrink: 0;
+      width: 108px;
+      height: 108px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(201,167,74,0.2);
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      animation: thumbIn 0.4s ease;
+    }
+    @keyframes thumbIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .thumb:hover { transform: scale(1.04); border-color: rgba(201,167,74,0.5); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb .thumb-name {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+      padding: 16px 6px 5px;
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.9);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+
+    /* QR corner */
+    #qrCorner {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      border-left: 1px solid rgba(201,167,74,0.1);
+      gap: 6px;
+    }
+    #qrCorner canvas, #qrCorner img { border-radius: 6px; }
+    .qr-corner-label {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+    .qr-corner-url {
+      font-size: 0.7rem;
+      color: var(--gold);
+      text-align: center;
+    }
+
+    /* ── Confetti canvas ── */
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<canvas id="confetti"></canvas>
+
+<div id="app">
+  <!-- Header -->
+  <header>
+    <div class="party-title">🎂 &nbsp;Sinh nhật <span>Duy Linh</span></div>
+    <div class="header-right">
+      <div id="photoCount"></div>
+      <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    </div>
+  </header>
+
+  <!-- Main display -->
+  <div id="main">
+
+    <!-- Empty state -->
+    <div id="empty">
+      <div class="empty-cake">🎂</div>
+      <h2 class="empty-title">Màn hình đang chờ ảnh</h2>
+      <p class="empty-sub">Khách mời quét mã QR để chia sẻ khoảnh khắc</p>
+      <div id="qrEmpty">
+        <div id="qrEmptyCanvas"></div>
+        <div class="qr-label">Quét để chia sẻ ảnh lên màn hình</div>
+        <div class="qr-url" id="emptyUrl"></div>
+      </div>
+    </div>
+
+    <!-- Photo display -->
+    <div id="photoDisplay">
+      <div id="mainPhotoWrap">
+        <div id="glowRing"></div>
+        <img id="mainPhoto" src="" alt="">
+        <div id="mainInfo">
+          <div class="info-name" id="infoName"></div>
+          <div class="info-comment" id="infoComment"></div>
+          <div class="info-time" id="infoTime"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom: thumbnails + QR -->
+  <div id="bottom">
+    <div id="thumbs"></div>
+    <div id="qrCorner">
+      <div id="qrCornerCanvas"></div>
+      <div class="qr-corner-label">Quét để tham gia</div>
+      <div class="qr-corner-url" id="cornerUrl"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- QR code library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, query, orderBy, limit, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ═══════════════════════════════════════════════════════════════
+//  🔧 ĐIỀN THÔNG TIN FIREBASE VÀO ĐÂY (giống index.html)
+// ═══════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "FIREBASE_API_KEY",
+  authDomain:        "FIREBASE_PROJECT_ID.firebaseapp.com",
+  projectId:         "FIREBASE_PROJECT_ID",
+  storageBucket:     "FIREBASE_PROJECT_ID.appspot.com",
+  messagingSenderId: "FIREBASE_MESSAGING_SENDER_ID",
+  appId:             "FIREBASE_APP_ID",
+};
+// ═══════════════════════════════════════════════════════════════
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── QR codes ──
+const guestUrl = window.location.origin;
+
+function makeQR(containerId, size) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  new QRCode(el, {
+    text: guestUrl,
+    width: size, height: size,
+    colorDark: '#c9a74a',
+    colorLight: '#0a0a18',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+}
+makeQR('qrEmptyCanvas', 180);
+makeQR('qrCornerCanvas', 96);
+document.getElementById('emptyUrl').textContent   = guestUrl;
+document.getElementById('cornerUrl').textContent  = guestUrl.replace('https://','');
+
+// ── State ──
+let currentId   = null;
+let allPhotos   = [];
+
+// ── Elements ──
+const elEmpty   = document.getElementById('empty');
+const elDisplay = document.getElementById('photoDisplay');
+const elPhoto   = document.getElementById('mainPhoto');
+const elInfo    = document.getElementById('mainInfo');
+const elName    = document.getElementById('infoName');
+const elComment = document.getElementById('infoComment');
+const elTime    = document.getElementById('infoTime');
+const elCount   = document.getElementById('photoCount');
+const elThumbs  = document.getElementById('thumbs');
+const elGlow    = document.getElementById('glowRing');
+
+// ── Firestore listener ──
+const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(20));
+
+onSnapshot(q, snapshot => {
+  allPhotos = snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.imageUrl);
+
+  elCount.textContent = allPhotos.length
+    ? `${allPhotos.length} ảnh đã chia sẻ`
+    : '';
+
+  if (!allPhotos.length) {
+    showEmpty();
+    return;
+  }
+
+  const newest = allPhotos[0];
+  if (newest.id !== currentId) {
+    currentId = newest.id;
+    showPhoto(newest);
+    spawnConfetti();
+  }
+
+  renderThumbs(allPhotos.slice(1, 6));
+});
+
+function showEmpty() {
+  elEmpty.classList.remove('hidden');
+  elDisplay.classList.remove('visible');
+  elInfo.classList.remove('show');
+}
+
+function showPhoto(photo) {
+  elEmpty.classList.add('hidden');
+
+  // Fade in new photo
+  elPhoto.classList.remove('fade-in');
+  void elPhoto.offsetWidth; // reflow
+  elPhoto.src = photo.imageUrl;
+  elPhoto.onload = () => {
+    elDisplay.classList.add('visible');
+    elPhoto.classList.add('fade-in');
+    elInfo.classList.remove('show');
+    setTimeout(() => elInfo.classList.add('show'), 300);
+
+    // glow burst
+    elGlow.classList.remove('burst');
+    void elGlow.offsetWidth;
+    elGlow.classList.add('burst');
+  };
+
+  elName.textContent    = photo.name || '';
+  elComment.textContent = photo.comment ? `"${photo.comment}"` : '';
+  elTime.textContent    = formatTime(photo.timestamp);
+}
+
+function renderThumbs(photos) {
+  elThumbs.innerHTML = '';
+  photos.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `<img src="${p.imageUrl}" loading="lazy" alt="">
+                     <div class="thumb-name">${esc(p.name)}</div>`;
+    div.addEventListener('click', () => {
+      currentId = p.id;
+      showPhoto(p);
+    });
+    elThumbs.appendChild(div);
+  });
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function esc(str) {
+  return (str || '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+// ── Confetti ──
+function spawnConfetti() {
+  const canvas = document.getElementById('confetti');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  const colors = ['#c9a74a','#e8d5a3','#fff','#f9d06a','#ffe0a3'];
+  const particles = Array.from({ length: 60 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -10,
+    r: Math.random() * 5 + 3,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    vx: (Math.random() - 0.5) * 4,
+    vy: Math.random() * 4 + 2,
+    alpha: 1,
+    rot: Math.random() * 360,
+    drot: (Math.random() - 0.5) * 8,
+  }));
+
+  let frame;
+  function step() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.08;
+      p.rot += p.drot;
+      p.alpha -= 0.012;
+      if (p.alpha <= 0) return;
+      alive = true;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r * 1.6);
+      ctx.restore();
+    });
+    if (alive) frame = requestAnimationFrame(step);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  cancelAnimationFrame(frame);
+  step();
+}
+</script>
+
+
+<!-- Starfield -->
+<script>
+(function() {
+  const canvas = document.getElementById('bg');
+  const ctx    = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.2,
+      base: Math.random() * 0.5 + 0.07,
+      speed: Math.random() * 0.3 + 0.05,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = Date.now() / 1000;
+    stars.forEach(s => {
+      const a = s.base * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(201,167,74,${a.toFixed(3)})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  draw();
+  window.addEventListener('resize', resize);
+})();
+</script>
+
+</body>
+</html>
