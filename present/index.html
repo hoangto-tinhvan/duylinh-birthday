@@ -142,8 +142,8 @@
     /* Thumbnails grid */
     #thumbs {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       width: 100%;
       flex: 1;
       min-height: 0;
@@ -155,30 +155,18 @@
     #thumbs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
     .thumb {
       aspect-ratio: 1;
-      border-radius: 8px;
+      border-radius: 5px;
       overflow: hidden;
-      border: 1.5px solid rgba(255,215,0,0.4);
+      border: 1.5px solid rgba(255,215,0,0.35);
       cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
+      transition: transform 0.18s, border-color 0.18s;
       position: relative;
-      animation: thumbPop 0.35s ease;
     }
+    .thumb.thumb-new { animation: thumbPop 0.3s ease; }
     @keyframes thumbPop { from { transform: scale(0.7); opacity:0; } to { transform: scale(1); opacity:1; } }
-    .thumb:hover { transform: scale(1.06); border-color: #ffd700; }
-    .thumb.active-thumb { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.6); }
+    .thumb:hover { transform: scale(1.08); border-color: #ffd700; }
+    .thumb.active-thumb { border-color: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.6); }
     .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-    .thumb-name {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.65));
-      font-size: 0.58rem;
-      color: #fff;
-      padding: 8px 4px 3px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
 
     /* ══ MAIN AREA ══ */
     #main {
@@ -548,17 +536,37 @@ function startProgress(duration) {
 }
 
 // ── Thumbnails ──
+let renderedThumbIds = [];   // track which IDs are currently in the grid
+
 function renderThumbs() {
-  elThumbs.innerHTML = '';
-  // Show all photos except the one currently displayed
+  // Build list: all photos newest-first, skip the currently displayed one
   const others = allPhotos.filter((_, i) => i !== currentIdx);
-  others.forEach((p, i) => {
-    const origIdx = allPhotos.indexOf(p);
-    const div = document.createElement('div');
-    div.className = 'thumb';
-    div.innerHTML = `<img src="${p.imageUrl}" loading="lazy" alt=""><div class="thumb-name">${esc(p.name)}</div>`;
-    div.addEventListener('click', () => goToIndex(origIdx));
-    elThumbs.appendChild(div);
+  const newIds  = others.map(p => p.id);
+
+  // Find IDs that are brand-new (not in the previous render)
+  const prevSet = new Set(renderedThumbIds);
+  const addedIds = new Set(newIds.filter(id => !prevSet.has(id)));
+
+  // Full rebuild only when the list changed; otherwise just update active border
+  const sameOrder = newIds.length === renderedThumbIds.length &&
+                    newIds.every((id, i) => id === renderedThumbIds[i]);
+  if (!sameOrder) {
+    elThumbs.innerHTML = '';
+    others.forEach(p => {
+      const origIdx = allPhotos.indexOf(p);
+      const div = document.createElement('div');
+      // Only animate genuinely new entries
+      div.className = 'thumb' + (addedIds.has(p.id) ? ' thumb-new' : '');
+      div.innerHTML = `<img src="${p.imageUrl}" loading="lazy" alt="">`;
+      div.addEventListener('click', () => goToIndex(origIdx));
+      elThumbs.appendChild(div);
+    });
+    renderedThumbIds = newIds;
+  }
+
+  // Update active highlight without re-rendering
+  elThumbs.querySelectorAll('.thumb').forEach((el, i) => {
+    el.classList.toggle('active-thumb', others[i]?.id === allPhotos[currentIdx]?.id);
   });
 }
 
