@@ -172,6 +172,61 @@
     #main {
       flex: 1;
       display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    /* ── Master portrait ── */
+    #masterSection {
+      width: 36%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 18px;
+      border-right: 1px solid rgba(255,255,255,0.13);
+      position: relative;
+      overflow: hidden;
+    }
+    #masterSection::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(255,215,0,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    #masterImg {
+      max-width: 100%;
+      max-height: calc(100vh - 110px);
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 14px;
+      border: 3px solid rgba(255,215,0,0.55);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.12),
+        0 0 50px rgba(255,215,0,0.18),
+        0 24px 64px rgba(0,0,0,0.55);
+      transition: opacity 0.6s;
+    }
+    #masterImg.loading { opacity: 0.3; }
+    .master-label {
+      font-family: 'Dancing Script', cursive;
+      font-size: 1.15rem;
+      color: #ffd700;
+      margin-top: 14px;
+      text-shadow: 0 0 24px rgba(255,215,0,0.5), 0 2px 8px rgba(0,0,0,0.5);
+      letter-spacing: 0.5px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    /* ── Slideshow section ── */
+    #slideshowSection {
+      flex: 1;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -347,30 +402,47 @@
   <!-- ══ MAIN AREA ══ -->
   <main id="main">
 
-    <!-- Empty state -->
-    <div id="empty">
-      <div class="empty-emoji">✨</div>
-      <h2 class="empty-title">Đêm tiệc sắp bắt đầu!</h2>
-      <p class="empty-sub">Khách mời quét mã QR để chia sẻ khoảnh khắc</p>
-      <div id="qrEmpty">
-        <canvas id="qrEmptyCanvas"></canvas>
-        <div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
-        <div class="empty-qr-url" id="emptyUrl"></div>
+    <!-- ── Ảnh sư phụ ── -->
+    <div id="masterSection">
+      <img id="masterImg" src="../assets/suphu.jpg" alt="Sư phụ Duy Linh" class="loading"
+           onload="this.classList.remove('loading')"
+           onerror="this.style.display='none'; document.getElementById('masterPlaceholder').style.display='flex'">
+      <div id="masterPlaceholder" style="display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; opacity:0.4;">
+        <div style="font-size:60px">🎸</div>
+        <div style="font-size:0.8rem; color:rgba(255,255,255,0.6); text-align:center;">Lưu ảnh vào<br>assets/suphu.jpg</div>
       </div>
+      <div class="master-label">Sư phụ Duy Linh ✦ 3<sup style="font-size:0.7em">4</sup></div>
     </div>
 
-    <!-- Photo display -->
-    <div id="photoDisplay">
-      <div id="photoFrame">
-        <img id="mainPhoto" src="" alt="">
-        <div id="mainInfo">
-          <div id="infoName"></div>
-          <div id="infoComment"></div>
+    <!-- ── Trình chiếu ── -->
+    <div id="slideshowSection">
+
+      <!-- Empty state -->
+      <div id="empty">
+        <div class="empty-emoji">✨</div>
+        <h2 class="empty-title">Đêm tiệc sắp bắt đầu!</h2>
+        <p class="empty-sub">Khách mời quét mã QR để chia sẻ khoảnh khắc</p>
+        <div id="qrEmpty">
+          <canvas id="qrEmptyCanvas"></canvas>
+          <div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
+          <div class="empty-qr-url" id="emptyUrl"></div>
         </div>
-        <div id="slideCounter"></div>
       </div>
-      <div id="progressWrap"><div id="progressBar"></div></div>
-    </div>
+
+      <!-- Photo display -->
+      <div id="photoDisplay">
+        <div id="photoFrame">
+          <img id="mainPhoto" src="" alt="">
+          <div id="mainInfo">
+            <div id="infoName"></div>
+            <div id="infoComment"></div>
+          </div>
+          <div id="slideCounter"></div>
+        </div>
+        <div id="progressWrap"><div id="progressBar"></div></div>
+      </div>
+
+    </div><!-- /slideshowSection -->
 
   </main>
 </div>
