@@ -375,6 +375,38 @@
       40%,80% { transform: translateX(6px); }
     }
     .shake { animation: shake 0.4s ease; }
+
+    /* ── Multi-photo preview ── */
+    .multi-count {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 0.4px;
+    }
+    #photoGrid {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    #photoGrid.cols-2 { grid-template-columns: 1fr 1fr; }
+    #photoGrid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .photo-thumb {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+    }
+    .photo-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .upload-progress {
+      font-size: 0.72rem;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 10px;
+      min-height: 18px;
+      letter-spacing: 0.3px;
+    }
   </style>
 </head>
 <body>
@@ -423,19 +455,29 @@
     </button>
   </div>
   <input type="file" id="fileCapture" accept="image/*" capture="environment" style="display:none">
-  <input type="file" id="fileGallery"  accept="image/*" style="display:none">
+  <input type="file" id="fileGallery"  accept="image/*" multiple style="display:none">
 </div>
 
 <!-- ── Screen 3: Xem trước + comment ── -->
 <div class="screen" id="s-preview">
   <div class="preview-wrap">
-    <img id="photoPreview" src="" alt="">
+    <!-- Single photo mode -->
+    <div id="singlePreview">
+      <img id="photoPreview" src="" alt="">
+    </div>
+    <!-- Multi photo mode -->
+    <div id="multiPreview" style="display:none">
+      <div class="multi-count" id="multiCountLabel"></div>
+      <div id="photoGrid"></div>
+    </div>
+
     <p class="label">Thêm lời nhắn (không bắt buộc)</p>
     <div class="input-wrap">
       <textarea id="commentInput" placeholder="Viết điều gì đó..."></textarea>
     </div>
+    <div class="upload-progress" id="uploadProgress"></div>
     <button class="btn btn-gold" id="shareBtn">🚀 &nbsp;Chia sẻ lên màn hình</button>
-    <button class="btn btn-ghost" id="retakeBtn">← &nbsp;Chụp lại</button>
+    <button class="btn btn-ghost" id="retakeBtn">← &nbsp;Chọn lại</button>
   </div>
 </div>
 
@@ -444,7 +486,7 @@
   <div class="success-wrap">
     <span class="success-emoji">🎉</span>
     <h2 class="success-title">Đã chia sẻ!</h2>
-    <p class="success-sub">Ảnh của bạn đã xuất hiện<br>trên màn hình tiệc rồi đó!</p>
+    <p class="success-sub" id="successSub">Ảnh của bạn đã xuất hiện<br>trên màn hình tiệc rồi đó!</p>
     <div style="max-width:280px; margin:0 auto;">
       <button class="btn btn-gold" id="moreBtn">📷 &nbsp;Chụp thêm ảnh</button>
     </div>
@@ -478,8 +520,8 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
 // ── state ──
-let userName       = '';
-let dataUrlToShare = null;
+let userName    = '';
+let pendingFiles = [];   // [{dataUrl}] — 1 ảnh từ camera hoặc tối đa 6 từ gallery
 
 // ── helpers ──
 const $ = id => document.getElementById(id);
@@ -491,7 +533,44 @@ function show(id) {
   });
 }
 
-function toast(visible) { $('toast').classList.toggle('show', visible); }
+function toast(visible, msg) {
+  const el = $('toast');
+  if (msg !== undefined) el.querySelector('span').textContent = msg;
+  el.classList.toggle('show', visible);
+}
+
+function showPreviewScreen() {
+  $('commentInput').value = '';
+  $('uploadProgress').textContent = '';
+
+  if (pendingFiles.length === 1) {
+    // Single mode
+    $('photoPreview').src = pendingFiles[0].dataUrl;
+    $('singlePreview').style.display = '';
+    $('multiPreview').style.display  = 'none';
+    $('shareBtn').innerHTML = '🚀 &nbsp;Chia sẻ lên màn hình';
+  } else {
+    // Multi mode
+    $('singlePreview').style.display = 'none';
+    $('multiPreview').style.display  = '';
+
+    const n = pendingFiles.length;
+    $('multiCountLabel').textContent = `${n} ảnh đã chọn`;
+
+    const grid = $('photoGrid');
+    grid.innerHTML = '';
+    grid.className = 'cols-' + (n <= 2 ? '2' : '3');
+    pendingFiles.forEach(({ dataUrl }) => {
+      const div = document.createElement('div');
+      div.className = 'photo-thumb';
+      div.innerHTML = `<img src="${dataUrl}" alt="">`;
+      grid.appendChild(div);
+    });
+
+    $('shareBtn').innerHTML = `🚀 &nbsp;Chia sẻ ${n} ảnh lên màn hình`;
+  }
+  show('s-preview');
+}
 
 // ── Screen 1: tên ──
 $('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('enterBtn').click(); });
@@ -508,56 +587,95 @@ $('enterBtn').addEventListener('click', () => {
 $('camBtn').addEventListener('click',    () => $('fileCapture').click());
 $('galleryBtn').addEventListener('click', () => $('fileGallery').click());
 
-async function handleFileSelect(e) {
+// Camera — always single
+$('fileCapture').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   e.target.value = '';
+  toast(true, 'Đang xử lý ảnh...');
   try {
     const dataUrl = await compress(file);
-    dataUrlToShare = dataUrl;
-    $('photoPreview').src = dataUrl;
-    $('commentInput').value = '';
-    show('s-preview');
+    pendingFiles = [{ dataUrl }];
+    toast(false);
+    showPreviewScreen();
   } catch (err) {
+    toast(false);
     console.error('Lỗi đọc ảnh:', err);
     alert('Không thể đọc ảnh này 😢 Thử ảnh khác nhé!');
   }
-}
-$('fileCapture').addEventListener('change', handleFileSelect);
-$('fileGallery').addEventListener('change',  handleFileSelect);
+});
+
+// Gallery — up to 6 ảnh
+$('fileGallery').addEventListener('change', async e => {
+  const MAX = 6;
+  const files = [...e.target.files].slice(0, MAX);
+  e.target.value = '';
+  if (!files.length) return;
+
+  const over = e.target.files.length > MAX;
+  toast(true, `Đang xử lý ${files.length} ảnh...`);
+  try {
+    pendingFiles = [];
+    for (let i = 0; i < files.length; i++) {
+      toast(true, `Đang xử lý ảnh ${i + 1}/${files.length}...`);
+      pendingFiles.push({ dataUrl: await compress(files[i]) });
+    }
+    toast(false);
+    if (over) alert(`Chỉ chia sẻ được tối đa ${MAX} ảnh một lần. ${MAX} ảnh đầu tiên đã được chọn.`);
+    showPreviewScreen();
+  } catch (err) {
+    toast(false);
+    console.error('Lỗi đọc ảnh:', err);
+    alert('Không thể đọc ảnh này 😢 Thử ảnh khác nhé!');
+  }
+});
 
 // ── Screen 3: preview ──
-$('retakeBtn').addEventListener('click', () => { dataUrlToShare = null; show('s-camera'); });
+$('retakeBtn').addEventListener('click', () => { pendingFiles = []; show('s-camera'); });
 
 $('shareBtn').addEventListener('click', async () => {
-  if (!dataUrlToShare) return;
+  if (!pendingFiles.length) return;
   $('shareBtn').disabled = true;
-  toast(true);
+  $('retakeBtn').disabled = true;
+
+  const comment = $('commentInput').value.trim();
+  const total   = pendingFiles.length;
 
   try {
-    console.log('[Share] Lưu vào Firestore...');
-    await withTimeout(
-      addDoc(collection(db, 'photos'), {
-        name:      userName,
-        comment:   $('commentInput').value.trim(),
-        imageUrl:  dataUrlToShare,   // base64 data URI, không cần Storage
-        timestamp: serverTimestamp(),
-      }),
-      15000, 'Firestore timeout — kiểm tra mạng'
-    );
-    console.log('[Share] ✅ Xong!');
+    for (let i = 0; i < total; i++) {
+      const label = total > 1 ? `Đang chia sẻ ${i + 1}/${total}...` : 'Đang chia sẻ lên màn hình...';
+      toast(true, label);
+      if (total > 1) $('uploadProgress').textContent = label;
+
+      await withTimeout(
+        addDoc(collection(db, 'photos'), {
+          name:      userName,
+          comment:   comment,
+          imageUrl:  pendingFiles[i].dataUrl,
+          timestamp: serverTimestamp(),
+        }),
+        15000, 'Firestore timeout — kiểm tra mạng'
+      );
+    }
     toast(false);
+    $('successSub').innerHTML = total > 1
+      ? `${total} ảnh của bạn đã xuất hiện<br>trên màn hình tiệc rồi đó!`
+      : 'Ảnh của bạn đã xuất hiện<br>trên màn hình tiệc rồi đó!';
+    pendingFiles = [];
     show('s-success');
   } catch (err) {
     console.error('[Share] LỖI:', err.code, err.message);
     toast(false);
+    $('uploadProgress').textContent = '';
     alert(`❌ Lỗi: ${err.message}\n\nKiểm tra kết nối mạng rồi thử lại.`);
   }
-  $('shareBtn').disabled = false;
+
+  $('shareBtn').disabled  = false;
+  $('retakeBtn').disabled = false;
 });
 
 // ── Screen 4: chụp thêm ──
-$('moreBtn').addEventListener('click', () => { dataUrlToShare = null; show('s-camera'); });
+$('moreBtn').addEventListener('click', () => { pendingFiles = []; show('s-camera'); });
 
 // ── Timeout helper ──
 function withTimeout(promise, ms, label = 'Timeout') {
