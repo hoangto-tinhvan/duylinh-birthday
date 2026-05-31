@@ -8,127 +8,178 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body { height: 100%; overflow: hidden; }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(-45deg, #c2185b, #7b1fa2, #e53935, #ad1457, #6a1b9a);
-      background-size: 400% 400%;
-      animation: bgFlow 14s ease infinite;
-    }
-    @keyframes bgFlow {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      color: #f0e8d8;
+      /*
+        Stage (slideshow) is now LEFT → painting is RIGHT.
+        Gradient goes dark (left) → teal (right, matching painting).
+        Smooth enough that no line is visible at the panel boundary.
+      */
+      background: linear-gradient(
+        to right,
+        #04101e 0%,
+        #071d2c 22%,
+        #0c3347 46%,
+        #167085 66%,
+        #1e7290 82%,
+        #1e7290 100%
+      );
     }
 
-    /* ── Floating hearts ── */
-    .fheart {
+    /* ── Atmospheric glows — echo the painting's palette ── */
+    .atmos {
       position: fixed;
+      border-radius: 50%;
       pointer-events: none;
       z-index: 0;
-      animation: floatUp linear infinite;
-      opacity: 0;
+      filter: blur(120px);
     }
-    @keyframes floatUp {
-      0%   { transform: translateY(110vh) rotate(0deg) scale(1);   opacity: 0; }
-      10%  { opacity: 0.7; }
-      90%  { opacity: 0.5; }
-      100% { transform: translateY(-12vh) rotate(720deg) scale(0.5); opacity: 0; }
+    /* Crimson echo from the painting's red cloud */
+    .atmos-red {
+      width: 560px; height: 700px;
+      background: rgba(140, 28, 28, 0.22);
+      top: -100px; left: 12%;
+      animation: atPulse 8s ease-in-out infinite;
+    }
+    /* Warm amber in stage area */
+    .atmos-amber {
+      width: 500px; height: 400px;
+      background: rgba(200, 140, 40, 0.09);
+      bottom: -80px; right: 8%;
+      animation: atPulse 10s ease-in-out infinite 3s;
+    }
+    @keyframes atPulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.7; transform: scale(1.06); }
     }
 
-    /* ── Layout ── */
+    /* ── App shell ── */
     #app {
-      position: relative;
-      z-index: 1;
       height: 100vh;
       display: flex;
+      position: relative;
+      z-index: 1;
     }
 
-    /* ══ LEFT PANEL ══ */
-    #panel {
+    /* ══════════════════════════════
+       PAINTING SECTION (left 40%)
+    ══════════════════════════════ */
+    #masterWrap {
+      width: 40%;
       flex-shrink: 0;
-      width: 313px;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      /* transparent — body gradient shows through, painting teal blends naturally */
+      background: transparent;
+    }
+
+    #masterImg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;       /* Show full painting without cropping */
+      object-position: center;
+      display: block;
+      /*
+        Painting now on RIGHT → fade LEFT edge so it dissolves into the stage.
+      */
+      -webkit-mask-image: linear-gradient(
+        to left,
+        black 0%,
+        black 58%,
+        rgba(0,0,0,0.55) 76%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        to left,
+        black 0%,
+        black 58%,
+        rgba(0,0,0,0.55) 76%,
+        transparent 100%
+      );
+    }
+
+    /* Top & bottom vignette — painting fades into body background */
+    #masterWrap::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(6, 20, 32, 0.52) 0%,
+        transparent 14%,
+        transparent 80%,
+        rgba(6, 20, 32, 0.58) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* ══════════════════════════════
+       STAGE (right 60%)
+    ══════════════════════════════ */
+    #stage {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 24px 16px 20px;
-      gap: 0;
-      background: rgba(255,255,255,0.12);
-      backdrop-filter: blur(24px);
-      border-right: 1px solid rgba(255,255,255,0.25);
-      box-shadow: 4px 0 40px rgba(0,0,0,0.25);
       overflow: hidden;
+      padding: 28px 30px 20px 38px;
+      position: relative;
     }
 
-    .panel-cake { font-size: 44px; margin-bottom: 6px; animation: bounce 2s ease-in-out infinite; }
-    @keyframes bounce { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
+    /* No hard overlay — body gradient handles all darkening seamlessly */
+    /* All direct children float above any stacking layers */
+    #stage > * { position: relative; z-index: 1; }
 
-    .panel-title {
-      font-family: 'Dancing Script', cursive;
-      font-size: 1.35rem;
-      color: #fff;
-      text-align: center;
-      line-height: 1.4;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-      margin-bottom: 4px;
-    }
-    .panel-title .name {
-      font-size: 1.6rem;
-      color: #ffd700;
-      display: block;
-      text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
-    }
-    .panel-title sup { font-size: 0.75em; }
-
-    .panel-divider {
-      width: 100%;
+    /* ── Title bar ── */
+    #titleBar {
+      flex-shrink: 0;
       display: flex;
-      align-items: center;
-      gap: 6px;
-      margin: 12px 0;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
     }
-    .panel-divider::before, .panel-divider::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(255,215,0,0.5);
-    }
-    .panel-divider span { color: #ffd700; font-size: 14px; }
 
-    /* QR */
-    #qrWrap {
-      background: rgba(255,255,255,0.9);
-      border-radius: 14px;
-      padding: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,215,0,0.5);
+    .event-name { line-height: 1.2; }
+    .event-sup {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: rgba(240, 232, 216, 0.88);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      display: block;
       margin-bottom: 8px;
     }
-    #qrCanvas { display: block; border-radius: 6px; }
-    .qr-label {
-      text-align: center;
-      font-size: 0.68rem;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 4px;
-      letter-spacing: 0.3px;
-    }
-    .qr-url {
-      text-align: center;
-      font-size: 0.7rem;
+    .event-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.7rem;
+      font-weight: 700;
       color: #ffd700;
-      font-weight: 500;
-      margin-bottom: 12px;
+      display: block;
+      line-height: 1.1;
+      text-shadow:
+        0 0 40px rgba(255, 215, 0, 0.42),
+        0 2px 12px rgba(0, 0, 0, 0.65);
     }
+    .event-title sup { font-size: 0.62em; }
 
-    /* Live + count */
-    .live-row {
+    .live-pill {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      color: rgba(255,255,255,0.85);
-      margin-bottom: 12px;
+      gap: 7px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 100px;
+      padding: 7px 16px;
+      backdrop-filter: blur(16px);
+      margin-top: 8px;
     }
     .live-dot {
       width: 7px; height: 7px;
@@ -137,159 +188,107 @@
       box-shadow: 0 0 8px #4ade80;
       animation: blink 1.6s ease-in-out infinite;
     }
-    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-
-    /* Thumbnails grid */
-    #thumbs {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      align-content: start;
-    }
-    #thumbs::-webkit-scrollbar { width: 4px; }
-    #thumbs::-webkit-scrollbar-track { background: transparent; }
-    #thumbs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-    .thumb {
-      aspect-ratio: 1;
-      border-radius: 5px;
-      overflow: hidden;
-      border: 1.5px solid rgba(255,215,0,0.35);
-      cursor: pointer;
-      transition: transform 0.18s, border-color 0.18s;
-      position: relative;
-    }
-    .thumb.thumb-new { animation: thumbPop 0.3s ease; }
-    @keyframes thumbPop { from { transform: scale(0.7); opacity:0; } to { transform: scale(1); opacity:1; } }
-    .thumb:hover { transform: scale(1.08); border-color: #ffd700; }
-    .thumb.active-thumb { border-color: #ffd700; box-shadow: 0 0 8px rgba(255,215,0,0.6); }
-    .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-
-    /* ══ MAIN AREA ══ */
-    #main {
-      flex: 1;
-      display: flex;
-      flex-direction: row;
-      overflow: hidden;
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+    .live-text {
+      font-size: 0.72rem;
+      color: rgba(240, 232, 216, 0.82);
+      letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
-    /* ── Master portrait ── */
-    #masterSection {
-      width: 36%;
+    /* Gold ornament divider */
+    .ornament {
       flex-shrink: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px 18px;
-      border-right: 1px solid rgba(255,255,255,0.13);
-      position: relative;
-      overflow: hidden;
+      gap: 10px;
+      margin-bottom: 14px;
+      opacity: 0.55;
     }
-    #masterSection::before {
+    .ornament::before, .ornament::after {
       content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at center, rgba(255,215,0,0.05) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    #masterImg {
-      max-width: 100%;
-      max-height: calc(100vh - 110px);
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      display: block;
-      border-radius: 14px;
-      border: 3px solid rgba(255,215,0,0.55);
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.12),
-        0 0 50px rgba(255,215,0,0.18),
-        0 24px 64px rgba(0,0,0,0.55);
-      transition: opacity 0.6s;
-    }
-    #masterImg.loading { opacity: 0.3; }
-    .master-label {
-      font-family: 'Dancing Script', cursive;
-      font-size: 1.15rem;
-      color: #ffd700;
-      margin-top: 14px;
-      text-shadow: 0 0 24px rgba(255,215,0,0.5), 0 2px 8px rgba(0,0,0,0.5);
-      letter-spacing: 0.5px;
-      text-align: center;
-      opacity: 0.9;
-    }
-
-    /* ── Slideshow section ── */
-    #slideshowSection {
       flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,215,0,0.8), transparent);
+    }
+    .ornament span { color: #ffd700; font-size: 9px; letter-spacing: 4px; }
+
+    /* ── Photo area ── */
+    #photoArea {
+      flex: 1;
+      min-height: 0;
+      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px 28px;
-      position: relative;
-      overflow: hidden;
     }
 
-    /* Empty state */
+    /* Warm amber glow behind the photo — subtle, like a spotlight */
+    #photoArea::before {
+      content: '';
+      position: absolute;
+      inset: -60px;
+      background: radial-gradient(ellipse at center, rgba(180, 110, 30, 0.07) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* ─ Empty state ─ */
     #empty {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      gap: 12px;
+      gap: 14px;
       transition: opacity 0.5s;
     }
-    #empty.hidden { opacity:0; pointer-events:none; position:absolute; }
+    #empty.hidden { opacity: 0; pointer-events: none; position: absolute; }
 
-    .empty-emoji { font-size: 56px; animation: bounce 2s ease-in-out infinite; }
+    .empty-icon { font-size: 46px; animation: float 3.5s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     .empty-title {
       font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: #fff;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      font-size: 1.75rem;
+      color: rgba(240, 232, 216, 0.9);
+      text-shadow: 0 2px 14px rgba(0,0,0,0.5);
     }
-    .empty-sub { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
-
-    #qrEmpty {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,215,0,0.4);
-      border-radius: 20px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      backdrop-filter: blur(10px);
+    .empty-sub {
+      font-size: 0.86rem;
+      color: rgba(240, 232, 216, 0.5);
+      line-height: 1.7;
     }
-    .empty-qr-label { font-size: 0.8rem; color: rgba(255,255,255,0.8); }
-    .empty-qr-url   { font-size: 0.9rem; color: #ffd700; font-weight: 500; }
+    .empty-qr-box {
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 16px;
+      padding: 13px;
+      box-shadow: 0 10px 44px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,215,0,0.3);
+    }
+    .empty-url {
+      font-size: 0.74rem;
+      color: rgba(240, 232, 216, 0.5);
+      letter-spacing: 0.4px;
+    }
 
-    /* Photo display */
+    /* ─ Photo display ─ */
     #photoDisplay {
       display: none;
       flex-direction: column;
       align-items: center;
       width: 100%;
       height: 100%;
-      gap: 12px;
+      gap: 10px;
     }
     #photoDisplay.visible { display: flex; }
 
-    /* Photo frame */
     #photoFrame {
-      position: relative;
       flex: 1;
+      min-height: 0;
       width: 100%;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 0;
     }
 
     #mainPhoto {
@@ -298,62 +297,61 @@
       width: auto;
       height: auto;
       display: block;
-      border-radius: 18px;
-      border: 4px solid rgba(255,255,255,0.9);
+      border-radius: 14px;
+      /* No hard border — soft shadow only, feels like the photo glows from within */
       box-shadow:
-        0 0 0 2px rgba(255,215,0,0.6),
-        0 24px 80px rgba(0,0,0,0.5),
-        0 0 60px rgba(233,30,140,0.25);
+        0 0 0 1px rgba(255, 215, 0, 0.14),
+        0 28px 80px rgba(0, 0, 0, 0.65),
+        0 0 70px rgba(180, 110, 30, 0.1);
       transition: opacity 0.5s ease;
       object-fit: contain;
     }
     #mainPhoto.fade { opacity: 0; }
 
-    /* Info overlay */
+    /* Name / comment overlay */
     #mainInfo {
       position: absolute;
-      bottom: 4px; left: 0; right: 0;
-      padding: 32px 24px 16px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.72));
+      bottom: 0; left: 0; right: 0;
+      padding: 52px 26px 18px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
       border-radius: 0 0 14px 14px;
-      transform: translateY(8px);
       opacity: 0;
+      transform: translateY(8px);
       transition: opacity 0.5s 0.3s, transform 0.5s 0.3s;
       pointer-events: none;
     }
-    #mainInfo.show { opacity:1; transform:translateY(0); }
-
+    #mainInfo.show { opacity: 1; transform: translateY(0); }
     #infoName {
       font-family: 'Dancing Script', cursive;
-      font-size: 2rem;
+      font-size: 2.1rem;
       color: #fff;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-      margin-bottom: 2px;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+      margin-bottom: 3px;
     }
     #infoComment {
-      font-size: 1rem;
-      color: rgba(255,255,255,0.88);
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.82);
       font-style: italic;
       font-weight: 300;
       text-shadow: 0 1px 6px rgba(0,0,0,0.8);
     }
 
-    /* Slide counter */
     #slideCounter {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.5);
       position: absolute;
-      top: 10px; right: 14px;
+      top: 10px; right: 12px;
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.38);
       background: rgba(0,0,0,0.3);
       border-radius: 100px;
-      padding: 3px 10px;
+      padding: 3px 9px;
+      backdrop-filter: blur(8px);
     }
 
-    /* Progress bar */
+    /* ── Progress bar ── */
     #progressWrap {
       width: 100%;
-      height: 4px;
-      background: rgba(255,255,255,0.2);
+      height: 3px;
+      background: rgba(255,255,255,0.1);
       border-radius: 100px;
       overflow: hidden;
       flex-shrink: 0;
@@ -361,72 +359,117 @@
     #progressBar {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #ffd700, #ff80ab, #ffd700);
+      background: linear-gradient(90deg, #c8952a, #ffd700, #c8952a);
       background-size: 200% 100%;
       border-radius: 100px;
-      animation: shimmer 2s linear infinite;
+      animation: shimmer 2.4s linear infinite;
     }
     @keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
 
-    /* Confetti canvas */
-    #confetti { position:fixed; inset:0; pointer-events:none; z-index:50; }
+    /* ── Bottom bar: QR + thumbnail strip ── */
+    #bottomBar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-top: 14px;
+      margin-top: 6px;
+      border-top: 1px solid rgba(255, 215, 0, 0.12);
+    }
+
+    /* QR — positioned top-right of painting section */
+    #qrOnPainting {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 5;   /* above ::after vignette */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    #qrBar {
+      background: rgba(255,255,255,0.93);
+      border-radius: 9px;
+      padding: 5px;
+      box-shadow: 0 4px 22px rgba(0,0,0,0.45);
+    }
+    .qr-hint {
+      font-size: 0.59rem;
+      color: rgba(240, 232, 216, 0.55);
+      text-align: center;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+    }
+
+    /* Horizontal thumbnail strip */
+    #thumbsStrip {
+      flex: 1;
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      align-items: center;
+      scrollbar-width: none;
+      padding: 3px 0;
+    }
+    #thumbsStrip::-webkit-scrollbar { display: none; }
+
+    .thumb {
+      flex-shrink: 0;
+      width: 58px; height: 58px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1.5px solid rgba(255, 215, 0, 0.22);
+      cursor: pointer;
+      transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    }
+    .thumb.thumb-new { animation: thumbPop 0.3s ease; }
+    @keyframes thumbPop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .thumb:hover { transform: scale(1.12); border-color: rgba(255,215,0,0.75); }
+    .thumb.active-thumb { border-color: #ffd700; box-shadow: 0 0 12px rgba(255,215,0,0.55); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* ── Confetti canvas ── */
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
   </style>
 </head>
 <body>
 
 <canvas id="confetti"></canvas>
+<div class="atmos atmos-red"></div>
+<div class="atmos atmos-amber"></div>
 
 <div id="app">
-  <!-- ══ LEFT PANEL ══ -->
-  <aside id="panel">
-    <div class="panel-cake">🎂</div>
-    <div class="panel-title">
-      Sinh nhật sư phụ<br>
-      <span class="name">Duy Linh 3<sup>4</sup></span>
-    </div>
 
-    <div class="panel-divider"><span>♥ ♥ ♥</span></div>
+  <!-- ══ STAGE (LEFT) ══ -->
+  <div id="stage">
 
-    <p class="qr-label">Quét để chia sẻ ảnh lên màn hình</p>
-    <div id="qrWrap"><canvas id="qrCanvas"></canvas></div>
-    <div class="qr-url" id="qrUrl"></div>
-
-    <div class="live-row">
-      <div class="live-dot"></div>
-      <span>LIVE &nbsp;·&nbsp; <span id="photoCount">0 ảnh</span></span>
-    </div>
-
-    <div id="thumbs"></div>
-  </aside>
-
-  <!-- ══ MAIN AREA ══ -->
-  <main id="main">
-
-    <!-- ── Ảnh sư phụ ── -->
-    <div id="masterSection">
-      <img id="masterImg" src="../assets/suphu.jpg" alt="Sư phụ Duy Linh" class="loading"
-           onload="this.classList.remove('loading')"
-           onerror="this.style.display='none'; document.getElementById('masterPlaceholder').style.display='flex'">
-      <div id="masterPlaceholder" style="display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px; opacity:0.4;">
-        <div style="font-size:60px">🎸</div>
-        <div style="font-size:0.8rem; color:rgba(255,255,255,0.6); text-align:center;">Lưu ảnh vào<br>assets/suphu.jpg</div>
+    <!-- Title bar -->
+    <div id="titleBar">
+      <div class="event-name">
+        <span class="event-sup">✦ &nbsp; Đêm tiệc sinh nhật &nbsp; ✦</span>
+        <span class="event-title">Sư phụ Duy Linh 3<sup>4</sup></span>
       </div>
-      <div class="master-label">Sư phụ Duy Linh ✦ 3<sup style="font-size:0.7em">4</sup></div>
+      <div class="live-pill">
+        <div class="live-dot"></div>
+        <span class="live-text">LIVE &nbsp;·&nbsp; <span id="photoCount">0 ảnh</span></span>
+      </div>
     </div>
 
-    <!-- ── Trình chiếu ── -->
-    <div id="slideshowSection">
+    <!-- Ornament divider -->
+    <div class="ornament"><span>✦ ✦ ✦</span></div>
+
+    <!-- Photo area -->
+    <div id="photoArea">
 
       <!-- Empty state -->
       <div id="empty">
-        <div class="empty-emoji">✨</div>
+        <div class="empty-icon">✨</div>
         <h2 class="empty-title">Đêm tiệc sắp bắt đầu!</h2>
-        <p class="empty-sub">Khách mời quét mã QR để chia sẻ khoảnh khắc</p>
-        <div id="qrEmpty">
-          <canvas id="qrEmptyCanvas"></canvas>
-          <div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
-          <div class="empty-qr-url" id="emptyUrl"></div>
-        </div>
+        <p class="empty-sub">Khách mời quét mã QR để chia sẻ<br>khoảnh khắc lên màn hình</p>
+        <div class="empty-qr-box" id="qrEmpty"></div>
+        <div class="empty-url" id="emptyUrl"></div>
       </div>
 
       <!-- Photo display -->
@@ -442,10 +485,26 @@
         <div id="progressWrap"><div id="progressBar"></div></div>
       </div>
 
-    </div><!-- /slideshowSection -->
+    </div><!-- /photoArea -->
 
-  </main>
-</div>
+    <!-- Bottom bar: thumbnails only (QR moved to painting top-right) -->
+    <div id="bottomBar">
+      <div id="thumbsStrip"></div>
+    </div>
+
+  </div><!-- /stage -->
+
+  <!-- ══ PAINTING (RIGHT) — figure faces LEFT = faces the slideshow ══ -->
+  <div id="masterWrap">
+    <img id="masterImg" src="../assets/suphu.jpg" alt="Sư phụ Duy Linh">
+    <!-- QR top-right of painting panel -->
+    <div id="qrOnPainting">
+      <div id="qrBar"></div>
+      <div class="qr-hint">Quét để chia sẻ ảnh</div>
+    </div>
+  </div>
+
+</div><!-- /app -->
 
 <!-- QR code lib -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -468,40 +527,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
-// ── QR Codes ──
+// ── QR codes ──
 const guestUrl = window.location.origin;
 
-function makeQR(el, size) {
-  el.innerHTML = '';
-  new QRCode(el, {
-    text: guestUrl, width: size, height: size,
-    colorDark: '#7b1fa2', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-  // Fix: QRCode lib creates an img inside div; move canvas out if needed
-}
-makeQR(document.getElementById('qrWrap').querySelector('#qrCanvas').parentElement || document.getElementById('qrWrap'), 120);
-// Actually create fresh QRCode in the wrapper divs
-document.getElementById('qrWrap').innerHTML = '';
-new QRCode(document.getElementById('qrWrap'), { text: guestUrl, width: 120, height: 120, colorDark: '#7b1fa2', colorLight: '#f8f8f8', correctLevel: QRCode.CorrectLevel.M });
+new QRCode(document.getElementById('qrEmpty'), {
+  text: guestUrl, width: 156, height: 156,
+  colorDark: '#0e3d50', colorLight: '#f5f5f5',
+  correctLevel: QRCode.CorrectLevel.M,
+});
 
-document.getElementById('qrEmpty').innerHTML = '';
-new QRCode(document.getElementById('qrEmpty'), { text: guestUrl, width: 180, height: 180, colorDark: '#7b1fa2', colorLight: '#f8f8f8', correctLevel: QRCode.CorrectLevel.M });
-// Re-add labels after QRCode clears innerHTML
-document.getElementById('qrEmpty').insertAdjacentHTML('beforeend',
-  `<div class="empty-qr-label">Quét để chia sẻ ảnh lên màn hình</div>
-   <div class="empty-qr-url" id="emptyUrl"></div>`);
+new QRCode(document.getElementById('qrBar'), {
+  text: guestUrl, width: 70, height: 70,
+  colorDark: '#0e3d50', colorLight: '#f5f5f5',
+  correctLevel: QRCode.CorrectLevel.M,
+});
 
-document.getElementById('qrUrl').textContent     = guestUrl.replace('https://','');
-document.getElementById('emptyUrl').textContent   = guestUrl.replace('https://','');
+document.getElementById('emptyUrl').textContent = guestUrl.replace('https://', '');
 
 // ── Slideshow state ──
-const NEW_SLIDE_MS = 15000;   // ảnh mới: 15 giây
-const OLD_SLIDE_MS =  4000;   // ảnh cũ: 4 giây
-let allPhotos    = [];
-let currentIdx   = 0;
-let slideTimer   = null;
-let prevNewestId = null;
+const NEW_SLIDE_MS = 15000;
+const OLD_SLIDE_MS =  4000;
+let allPhotos        = [];
+let currentIdx       = 0;
+let slideTimer       = null;
+let prevNewestId     = null;
+let renderedThumbIds = [];
 
 // ── Elements ──
 const elEmpty   = document.getElementById('empty');
@@ -512,15 +562,14 @@ const elName    = document.getElementById('infoName');
 const elComment = document.getElementById('infoComment');
 const elCounter = document.getElementById('slideCounter');
 const elBar     = document.getElementById('progressBar');
-const elThumbs  = document.getElementById('thumbs');
+const elThumbs  = document.getElementById('thumbsStrip');
 const elCount   = document.getElementById('photoCount');
 
 // ── Firestore listener ──
-const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(30));
+const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(50));
 onSnapshot(q, snap => {
   const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.imageUrl);
   elCount.textContent = fresh.length + ' ảnh';
-
   if (!fresh.length) { showEmpty(); return; }
 
   const newestId = fresh[0].id;
@@ -528,7 +577,7 @@ onSnapshot(q, snap => {
 
   if (newestId !== prevNewestId) {
     prevNewestId = newestId;
-    goToIndex(0, true);    // Jump to newest (show 15s)
+    goToIndex(0, true);   // Jump to newest, show 15s
     spawnConfetti();
   }
 
@@ -541,13 +590,12 @@ function showEmpty() {
   elDisplay.classList.remove('visible');
   clearTimeout(slideTimer);
 }
-
 function showDisplay() {
   elEmpty.classList.add('hidden');
   elDisplay.classList.add('visible');
 }
 
-// ── Go to photo at index ──
+// ── Navigate to photo ──
 function goToIndex(idx, isNew = false) {
   currentIdx = ((idx % allPhotos.length) + allPhotos.length) % allPhotos.length;
   const photo = allPhotos[currentIdx];
@@ -555,25 +603,21 @@ function goToIndex(idx, isNew = false) {
   const duration = isNew ? NEW_SLIDE_MS : OLD_SLIDE_MS;
 
   showDisplay();
-
-  // Fade out → swap → fade in
   elPhoto.classList.add('fade');
   elInfo.classList.remove('show');
 
   setTimeout(() => {
-    elPhoto.src       = photo.imageUrl;
-    elName.textContent    = photo.name || '';
+    elPhoto.src           = photo.imageUrl;
+    elName.textContent    = photo.name    || '';
     elComment.textContent = photo.comment ? `"${photo.comment}"` : '';
     elCounter.textContent = `${currentIdx + 1} / ${allPhotos.length}`;
-    elPhoto.onload = () => {
+
+    const reveal = () => {
       elPhoto.classList.remove('fade');
       setTimeout(() => elInfo.classList.add('show'), 200);
     };
-    // If already cached (no onload fires), just show
-    if (elPhoto.complete && elPhoto.naturalWidth) {
-      elPhoto.classList.remove('fade');
-      setTimeout(() => elInfo.classList.add('show'), 200);
-    }
+    elPhoto.onload = reveal;
+    if (elPhoto.complete && elPhoto.naturalWidth) reveal();
   }, 500);
 
   startProgress(duration);
@@ -581,19 +625,19 @@ function goToIndex(idx, isNew = false) {
   renderThumbs();
 }
 
-// ── Auto-advance (random, not sequential) ──
+// ── Auto-advance (random order) ──
 function scheduleNext(duration) {
   clearTimeout(slideTimer);
   if (allPhotos.length <= 1) return;
   slideTimer = setTimeout(() => {
-    let nextIdx;
+    let next;
     if (allPhotos.length === 2) {
-      nextIdx = 1 - currentIdx;
+      next = 1 - currentIdx;
     } else {
-      do { nextIdx = Math.floor(Math.random() * allPhotos.length); }
-      while (nextIdx === currentIdx);
+      do { next = Math.floor(Math.random() * allPhotos.length); }
+      while (next === currentIdx);
     }
-    goToIndex(nextIdx);
+    goToIndex(next);
   }, duration);
 }
 
@@ -607,27 +651,21 @@ function startProgress(duration) {
   }));
 }
 
-// ── Thumbnails ──
-let renderedThumbIds = [];   // track which IDs are currently in the grid
-
+// ── Thumbnails — horizontal strip, diff-based render ──
 function renderThumbs() {
-  // Build list: all photos newest-first, skip the currently displayed one
   const others = allPhotos.filter((_, i) => i !== currentIdx);
-  const newIds  = others.map(p => p.id);
-
-  // Find IDs that are brand-new (not in the previous render)
-  const prevSet = new Set(renderedThumbIds);
+  const newIds = others.map(p => p.id);
+  const prevSet  = new Set(renderedThumbIds);
   const addedIds = new Set(newIds.filter(id => !prevSet.has(id)));
 
-  // Full rebuild only when the list changed; otherwise just update active border
   const sameOrder = newIds.length === renderedThumbIds.length &&
                     newIds.every((id, i) => id === renderedThumbIds[i]);
+
   if (!sameOrder) {
     elThumbs.innerHTML = '';
     others.forEach(p => {
       const origIdx = allPhotos.indexOf(p);
       const div = document.createElement('div');
-      // Only animate genuinely new entries
       div.className = 'thumb' + (addedIds.has(p.id) ? ' thumb-new' : '');
       div.innerHTML = `<img src="${p.imageUrl}" loading="lazy" alt="">`;
       div.addEventListener('click', () => goToIndex(origIdx));
@@ -636,7 +674,6 @@ function renderThumbs() {
     renderedThumbIds = newIds;
   }
 
-  // Update active highlight without re-rendering
   elThumbs.querySelectorAll('.thumb').forEach((el, i) => {
     el.classList.toggle('active-thumb', others[i]?.id === allPhotos[currentIdx]?.id);
   });
@@ -647,25 +684,26 @@ function spawnConfetti() {
   const canvas = document.getElementById('confetti');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
-  const colors = ['#ffd700','#ff80ab','#fff','#ff4d9d','#c44dff','#f9a825'];
-  const particles = Array.from({ length: 80 }, () => ({
+  const ctx  = canvas.getContext('2d');
+  // Colors drawn from the painting: teal, crimson, gold, white
+  const colors = ['#ffd700','#c8952a','#fff','#c0392b','#4ecdc4','#f0e8d8'];
+  const parts = Array.from({ length: 72 }, () => ({
     x: Math.random() * canvas.width,
     y: -10,
-    r: Math.random() * 6 + 3,
+    r: Math.random() * 5 + 2,
     color: colors[Math.floor(Math.random() * colors.length)],
-    vx: (Math.random() - 0.5) * 5,
-    vy: Math.random() * 4 + 2,
+    vx: (Math.random() - 0.5) * 4.5,
+    vy: Math.random() * 3.5 + 1.5,
     alpha: 1,
     rot: Math.random() * 360,
-    drot: (Math.random() - 0.5) * 10,
+    drot: (Math.random() - 0.5) * 8,
   }));
   let raf;
   function step() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let alive = false;
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.vy += 0.1;
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.07;
       p.rot += p.drot; p.alpha -= 0.011;
       if (p.alpha <= 0) return; alive = true;
       ctx.save();
@@ -682,32 +720,6 @@ function spawnConfetti() {
   cancelAnimationFrame(raf);
   step();
 }
-
-function esc(s) {
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-</script>
-
-<!-- Floating hearts -->
-<script>
-(function() {
-  const hearts = ['❤️','🩷','💕','💖','💗','💓','🌸','✨','💫','🎀'];
-  for (let i = 0; i < 22; i++) {
-    const el = document.createElement('div');
-    el.className = 'fheart';
-    el.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-    const size = Math.random() * 22 + 12;
-    const dur  = Math.random() * 12 + 8;
-    const delay = Math.random() * 10;
-    el.style.cssText = `
-      left: ${Math.random() * 100}vw;
-      font-size: ${size}px;
-      animation-duration: ${dur}s;
-      animation-delay: ${delay}s;
-    `;
-    document.body.appendChild(el);
-  }
-})();
 </script>
 
 </body>
