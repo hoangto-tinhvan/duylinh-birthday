@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🎂 Sinh nhật sư phụ Duy Linh 3⁴</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -561,6 +561,9 @@ let currentIdx       = 0;
 let slideTimer       = null;
 let prevNewestId     = null;
 let renderedThumbIds = [];
+let loadGen          = 0;        // generation counter — prevents stale image loads
+let confettiRaf      = null;     // module-scoped so we can cancel on unload
+let lastConfettiAt   = 0;        // debounce rapid new-photo events
 
 // ── Elements ──
 const elEmpty   = document.getElementById('empty');
@@ -574,9 +577,9 @@ const elBar     = document.getElementById('progressBar');
 const elThumbs  = document.getElementById('thumbsStrip');
 const elCount   = document.getElementById('photoCount');
 
-// ── Firestore listener ──
+// ── Firestore listener (unsubscribe stored for cleanup) ──
 const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(50));
-onSnapshot(q, snap => {
+const unsubscribeFirestore = onSnapshot(q, snap => {
   const fresh = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.imageUrl);
   elCount.textContent = fresh.length + ' ảnh';
   if (!fresh.length) { showEmpty(); return; }
@@ -586,11 +589,20 @@ onSnapshot(q, snap => {
 
   if (newestId !== prevNewestId) {
     prevNewestId = newestId;
-    goToIndex(0, true);   // Jump to newest, show 15s
+    goToIndex(0, true);
     spawnConfetti();
   }
 
   renderThumbs();
+}, err => {
+  console.error('[Firestore] Listener error:', err.code, err.message);
+});
+
+// ── Cleanup on unload ──
+window.addEventListener('pagehide', () => {
+  unsubscribeFirestore();
+  clearTimeout(slideTimer);
+  if (confettiRaf) cancelAnimationFrame(confettiRaf);
 });
 
 // ── Show / hide states ──
@@ -606,6 +618,7 @@ function showDisplay() {
 
 // ── Navigate to photo ──
 function goToIndex(idx, isNew = false) {
+  if (!allPhotos.length) { showEmpty(); return; }   // guard: empty array → NaN modulo crash
   currentIdx = ((idx % allPhotos.length) + allPhotos.length) % allPhotos.length;
   const photo = allPhotos[currentIdx];
   if (!photo) return;
@@ -615,6 +628,8 @@ function goToIndex(idx, isNew = false) {
   elPhoto.classList.add('fade');
   elInfo.classList.remove('show');
 
+  const gen = ++loadGen;   // generation stamp — discard stale loads
+
   setTimeout(() => {
     elPhoto.src           = photo.imageUrl;
     elName.textContent    = photo.name    || '';
@@ -622,11 +637,14 @@ function goToIndex(idx, isNew = false) {
     elCounter.textContent = `${currentIdx + 1} / ${allPhotos.length}`;
 
     const reveal = () => {
+      if (gen !== loadGen) return;   // another load started — discard this one
       elPhoto.classList.remove('fade');
       setTimeout(() => elInfo.classList.add('show'), 200);
     };
     elPhoto.onload = reveal;
     if (elPhoto.complete && elPhoto.naturalWidth) reveal();
+    // Fallback: force reveal after 3s in case onload never fires (e.g. opaque cache)
+    setTimeout(reveal, 3000);
   }, 500);
 
   startProgress(duration);
@@ -650,14 +668,15 @@ function scheduleNext(duration) {
   }, duration);
 }
 
-// ── Progress bar ──
+// ── Progress bar (single RAF + forced reflow) ──
 function startProgress(duration) {
   elBar.style.transition = 'none';
   elBar.style.width = '0%';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    elBar.offsetWidth;   // force reflow so transition reset is applied
     elBar.style.transition = `width ${duration}ms linear`;
     elBar.style.width = '100%';
-  }));
+  });
 }
 
 // ── Thumbnails — horizontal strip, diff-based render ──
@@ -688,13 +707,18 @@ function renderThumbs() {
   });
 }
 
-// ── Confetti ──
+// ── Confetti (debounced + module-scoped RAF so it can be cancelled on unload) ──
 function spawnConfetti() {
+  const now = Date.now();
+  if (now - lastConfettiAt < 800) return;   // debounce: skip if < 800ms since last
+  lastConfettiAt = now;
+
+  if (confettiRaf) cancelAnimationFrame(confettiRaf);
+
   const canvas = document.getElementById('confetti');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
   const ctx  = canvas.getContext('2d');
-  // Colors drawn from the painting: teal, crimson, gold, white
   const colors = ['#ffd700','#c8952a','#fff','#c0392b','#4ecdc4','#f0e8d8'];
   const parts = Array.from({ length: 72 }, () => ({
     x: Math.random() * canvas.width,
@@ -707,7 +731,6 @@ function spawnConfetti() {
     rot: Math.random() * 360,
     drot: (Math.random() - 0.5) * 8,
   }));
-  let raf;
   function step() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let alive = false;
@@ -723,10 +746,9 @@ function spawnConfetti() {
       ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 1.6);
       ctx.restore();
     });
-    if (alive) raf = requestAnimationFrame(step);
-    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (alive) confettiRaf = requestAnimationFrame(step);
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); confettiRaf = null; }
   }
-  cancelAnimationFrame(raf);
   step();
 }
 </script>
@@ -757,43 +779,43 @@ function spawnConfetti() {
 })();
 </script>
 
-<!-- Giấy dó paper texture -->
+<!-- Giấy dó paper texture (cached in sessionStorage — generated only once per session) -->
 <script>
 (function () {
+  const CACHE_KEY = 'giay_do_v2';
   const S = 600;
-  const c = document.createElement('canvas');
-  c.width = c.height = S;
-  const g = c.getContext('2d');
 
-  // Vẽ sợi giấy dó: phần lớn trắng mờ (sáng), một ít tối nhạt (bóng sợi)
-  for (let i = 0; i < 700; i++) {
-    const x  = Math.random() * S;
-    const y  = Math.random() * S;
-    const l  = 20 + Math.random() * 130;       // độ dài sợi
-    const a  = Math.random() * Math.PI * 2;    // hướng ngẫu nhiên
-    const light = Math.random() > 0.32;
-    const alpha = light
-      ? (0.014 + Math.random() * 0.028)        // sợi sáng
-      : (0.008 + Math.random() * 0.016);       // sợi tối nhạt
-    const color = light ? '255,255,255' : '0,40,50';
-    const w = 0.22 + Math.random() * 0.7;
+  let dataUrl = null;
+  try { dataUrl = sessionStorage.getItem(CACHE_KEY); } catch(e) {}
 
-    // Sợi cong nhẹ (quadratic curve) như thớ giấy thật
-    const cx = x + Math.cos(a) * l * 0.45 + (Math.random() - 0.5) * 10;
-    const cy = y + Math.sin(a) * l * 0.45 + (Math.random() - 0.5) * 14;
-    g.beginPath();
-    g.moveTo(x, y);
-    g.quadraticCurveTo(cx, cy, x + Math.cos(a) * l, y + Math.sin(a) * l);
-    g.strokeStyle = `rgba(${color},${alpha.toFixed(3)})`;
-    g.lineWidth = w;
-    g.stroke();
+  if (!dataUrl) {
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    for (let i = 0; i < 700; i++) {
+      const x  = Math.random() * S;
+      const y  = Math.random() * S;
+      const l  = 20 + Math.random() * 130;
+      const a  = Math.random() * Math.PI * 2;
+      const light = Math.random() > 0.32;
+      const alpha = light ? (0.014 + Math.random() * 0.028) : (0.008 + Math.random() * 0.016);
+      const color = light ? '255,255,255' : '0,40,50';
+      const cx = x + Math.cos(a) * l * 0.45 + (Math.random() - 0.5) * 10;
+      const cy = y + Math.sin(a) * l * 0.45 + (Math.random() - 0.5) * 14;
+      g.beginPath(); g.moveTo(x, y);
+      g.quadraticCurveTo(cx, cy, x + Math.cos(a) * l, y + Math.sin(a) * l);
+      g.strokeStyle = `rgba(${color},${alpha.toFixed(3)})`;
+      g.lineWidth = 0.22 + Math.random() * 0.7;
+      g.stroke();
+    }
+    dataUrl = c.toDataURL();
+    try { sessionStorage.setItem(CACHE_KEY, dataUrl); } catch(e) {}
   }
 
-  // Overlay dưới toàn bộ UI, trên background color
   const el = document.createElement('div');
   el.style.cssText = [
     'position:fixed', 'inset:0', 'pointer-events:none', 'z-index:0',
-    `background:url(${c.toDataURL()}) repeat`,
+    `background:url(${dataUrl}) repeat`,
     `background-size:${S}px ${S}px`
   ].join(';');
   document.body.insertBefore(el, document.getElementById('app'));

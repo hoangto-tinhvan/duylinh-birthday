@@ -574,16 +574,19 @@ const elDelAll    = $('deleteAllBtn');
 const elSelAllBox = $('selectAllBox');
 const elLoading   = $('loadingState');
 
-// ── Firestore listener ──
-const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'));
+// ── Firestore listener (limit 500, unsubscribe on unload) ──
+const q = query(collection(db, 'photos'), orderBy('timestamp', 'desc'), limit(500));
 
-onSnapshot(q, snap => {
+const unsubscribeFirestore = onSnapshot(q, snap => {
   allPhotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  // Clean up selected IDs that no longer exist
   const existingIds = new Set(allPhotos.map(p => p.id));
   selectedIds = new Set([...selectedIds].filter(id => existingIds.has(id)));
   renderGrid();
+}, err => {
+  console.error('[Admin Firestore] Listener error:', err.code, err.message);
 });
+
+window.addEventListener('pagehide', () => unsubscribeFirestore());
 
 // ── Render grid ──
 function renderGrid() {
